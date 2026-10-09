@@ -7,6 +7,7 @@ const STORAGE='atlas-max-v1';
 const gearKeys=Object.keys(DATA.gear);
 const app=document.getElementById('app');
 let editing='move',selectedCell=null,activeTile=null,toastTimer=null;
+let technologyQuery='',configOpen=false,insightsOpen=false,dragFrom=null;
 const expandedAddons=new Set(['jetpack','life','hazard','underwater','mining','hyperdrive','freighterWarp','launch','mechLaser']);
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp=(n,min,max)=>Math.min(max,Math.max(min,Number(n)||min));
@@ -135,21 +136,41 @@ function renderTechnologyChoices(gear,profile,goal){
   let section='';const parts=[];
   for(const [id,f] of availableFamilies(gear,profile.vehicle)){
     if((f.section||'Technology')!==section){
-      section=f.section||'Technology';parts.push(`<h4 class="tech-section-title">${esc(section)}</h4>`);
+      section=f.section||'Technology';
+      parts.push(`<h4 class="tech-section-title">${esc(section)}</h4>`);
     }
     const picked=(f.addons||[]).filter(a=>canUse(a,profile.vehicle)&&profile.addons.includes(id+':'+a.id));
-    const summary=f.core?`Base + ${Math.min(profile.depth,f.maxUpgrades||0)} rolled`:
-      f.maxUpgrades?`${Math.min(profile.depth,f.maxUpgrades)} rolled modules`:'Individual blueprints';
     const addons=(f.addons||[]).filter(a=>canUse(a,profile.vehicle));
-    parts.push(`<div class="family-row"><input type="checkbox" id="fam-${id}" data-family="${id}" ${profile.enabled.includes(id)?'checked':''}><label for="fam-${id}"><span class="fam-topline"><span class="family-icon ${esc(f.color)}">${ICONS.render(f.icon,'family-glyph')}</span><span class="fam-title">${esc(f.name)} <span class="prio">${'◆'.repeat(Math.min(3,Math.ceil((goal.weights[id]||0)/2.5)))}</span></span></span><span class="fam-sub">${esc(summary)}${addons.length?` · ${picked.length}/${addons.length} extras`:''}</span></label></div>`);
-    if(addons.length){
-      parts.push(`<details class="addon-details" data-addon-group="${id}" ${expandedAddons.has(id)?'open':''}>
-        <summary>Choose ${esc(f.name)} blueprints <span>${picked.length}/${addons.length}</span></summary>
-        <div class="addon-list">${addons.map(a=>`<label class="addon-row ${profile.enabled.includes(id)?'':'dimmed'}"><input type="checkbox" data-addon="${id}:${esc(a.id)}" ${profile.addons.includes(id+':'+a.id)?'checked':''} ${profile.enabled.includes(id)?'':'disabled'}><span class="addon-glyph ${esc(f.color)}">${ICONS.render(a.icon||f.icon,'family-glyph')}</span><span>${esc(a.name)}</span></label>`).join('')}</div>
-      </details>`);
-    }
+    const summary=f.core?`Core + ${Math.min(profile.depth,f.maxUpgrades||0)} rolled`:
+      f.maxUpgrades?`${Math.min(profile.depth,f.maxUpgrades)} rolled modules`:'Individual blueprints';
+    const searchValue=(f.name+' '+f.section+' '+f.core+' '+f.upgrade+' '+addons.map(a=>a.name).join(' ')).toLowerCase();
+    const hidden=technologyQuery&&!searchValue.includes(technologyQuery.toLowerCase())?'filtered-out':'';
+    const enabled=profile.enabled.includes(id);
+    parts.push(`<div class="family-entry ${enabled?'is-enabled':''} ${hidden}" data-search="${esc(searchValue)}">
+      <div class="family-row">
+        <input type="checkbox" id="fam-${id}" data-family="${id}" ${enabled?'checked':''}>
+        <label for="fam-${id}"><span class="fam-topline"><span class="family-icon ${esc(f.color)}">${ICONS.render(f.icon,'family-glyph')}</span><span class="fam-title">${esc(f.name)}</span></span><span class="fam-sub">${esc(summary)}${addons.length?` · ${picked.length}/${addons.length} blueprints`:''}</span></label>
+        ${goal.weights[id]>=6?'<span class="family-priority" title="High-priority for this optimization focus">◆</span>':''}
+      </div>
+      ${addons.length?`<details class="addon-details" data-addon-group="${esc(id)}" ${expandedAddons.has(id)?'open':''}>
+        <summary>Blueprints <span>${picked.length}/${addons.length}</span></summary>
+        <div class="addon-list">${addons.map(a=>`<label class="addon-row ${enabled?'':'dimmed'}"><input type="checkbox" data-addon="${id}:${esc(a.id)}" ${profile.addons.includes(id+':'+a.id)?'checked':''} ${enabled?'':'disabled'}><span class="addon-glyph ${esc(f.color)}">${ICONS.render(a.icon||f.icon,'family-glyph')}</span><span>${esc(a.name)}</span></label>`).join('')}</div>
+      </details>`:''}
+    </div>`);
   }
   return parts.join('');
+}
+function adjacencyFor(i,gear,profile,tile){
+  if(!tile||!profile.layout||tile.noAdjacency)return [];
+  const map=profile.layout.map,tiles=profile.layout.tiles,cols=profile.cols,rows=profile.rows;
+  const sides=[['top',i-cols,i>=cols],['bottom',i+cols,i<cols*(rows-1)],['left',i-1,i%cols>0],['right',i+1,i%cols<cols-1]];
+  return sides.filter(([side,p,valid])=>{
+    if(!valid||map[p]<0)return false;
+    const other=tiles[map[p]],fam=gear.families[tile.family];
+    if(!other||other.family!==tile.family||other.noAdjacency)return false;
+    if(fam.adjacency!=='none')return true;
+    return tile.family==='story'&&['star','remembrance'].includes(tile.addon)&&['star','remembrance'].includes(other.addon)&&tile.addon!==other.addon;
+  }).map(x=>x[0]);
 }
 function render(){
   const {gear,profile,key}=context(),goal=gear.goals[profile.goal],stats=currentStats(gear,profile);
@@ -159,74 +180,69 @@ function render(){
   const sorted=familyPriority(gear,profile);
   const scMismatched=profSC.length!==scCount;
   const hasSkipped=profile.layout&&profile.layout.skipped&&profile.layout.skipped.length;
+  const pct=Math.round(100*tilesInGrid/Math.max(1,openSlots));
   app.innerHTML=`
     <header class="topbar">
-      <div class="brand"><span class="brand-icon" aria-hidden="true">⟁</span><div><div class="brand-name">ATLAS <span>MAX</span></div><div class="brand-sub">NO MAN'S SKY EQUIPMENT LAB</div></div></div>
-      <div class="top-actions"><span class="version"><i class="dot"></i>${esc(DATA.release)} REFERENCE</span><button class="top-link" data-action="export" title="Download your saved equipment profiles">⇩ Export</button><button class="top-link" data-action="import">⇧ Import</button><input type="file" id="import-file" accept="application/json,.json" class="sr-only"></div>
+      <div class="brand"><span class="brand-icon" aria-hidden="true">⟁</span><div><div class="brand-name">ATLAS <span>MAX</span></div><div class="brand-sub">NO MAN'S SKY <b>·</b> EQUIPMENT LAB</div></div></div>
+      <div class="top-actions"><span class="version"><i class="dot"></i> ${esc(DATA.release)} REFERENCE</span><button class="top-link" data-action="import" title="Load saved equipment profiles">⇧ <span>Import</span></button><button class="top-link" data-action="export" title="Download your saved equipment profiles">⇩ <span>Export</span></button><input type="file" id="import-file" accept="application/json,.json" class="sr-only"></div>
     </header>
-    <section class="hero"><div><div class="eyebrow">// Traveller loadout command</div><h1>Every slot matters.<br><em>Make yours count.</em></h1><p class="lead">Design your technology grid around actual supercharged slots, same-family adjacency and the way you play. No random builds, no imaginary damage numbers.</p></div><div class="hero-side"><strong>YOUR GAME. YOUR BUILD.</strong>Plan your layout here, then move technology manually in-game. Nothing connects to your save file.</div></section>
-    <div class="workspace"><aside class="panel side">
-      <div class="side-block"><div class="section-caption">01 / Choose equipment</div><nav class="gear-list" aria-label="Equipment types">
-        ${gearKeys.map(k=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${ICONS.render(DATA.gear[k].icon,'gear-glyph')}</span>${esc(DATA.gear[k].name)}<span class="gear-arrow">›</span></button>`).join('')}
-      </nav></div>
-      <div class="side-block"><div class="section-caption">02 / Your equipment</div>
-        <div class="form-row"><label for="gear-name" class="label">Loadout name</label><input id="gear-name" class="control" maxlength="80" placeholder="${esc(gear.placeholder)}" value="${esc(profile.name)}"></div>
-        <div class="controls-2"><div class="form-row"><label for="gear-class" class="label">Class</label><select id="gear-class" class="control" ${gear.fixedSC?'disabled title="Exosuit / Exocraft supercharged slots do not scale by class"':''}>${selectorOptions(['C','B','A','S'],profile.cls,v=>v+' class')}</select></div>
-        <div class="form-row"><label for="gear-target" class="label">Upgrade target</label><select id="gear-target" class="control">${selectorOptions(['S','X'],profile.target,v=>v+' class')}</select></div></div>
-        ${gear.vehicleOptions?`<div class="form-row"><label for="vehicle" class="label">Exocraft model</label><select id="vehicle" class="control">${Object.entries(gear.vehicleOptions).map(([id,name])=>`<option value="${id}" ${profile.vehicle===id?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="tiny">Builds are saved independently for each vehicle. New vehicles start with compatible technology.</p></div>`:''}
-        <div class="form-row"><label for="goal" class="label">Optimization focus</label><select id="goal" class="control">${Object.entries(gear.goals).map(([id,g])=>`<option value="${id}" ${id===profile.goal?'selected':''}>${esc(g.label)}</option>`).join('')}</select></div>
-        <div class="form-row"><label class="label">Procedural modules per family</label><div class="segmented" role="group" aria-label="Module cap">${[1,2,3].map(i=>`<button data-action="depth" data-depth="${i}" class="${i===profile.depth?'current':''}" aria-pressed="${i===profile.depth}">${i}</button>`).join('')}</div><p class="tiny">Crafted blueprint technology does not consume these module slots.</p></div>
-      </div>
-      <div class="side-block"><div class="section-caption">03 / Include technology <small>${sorted.length} groups selected</small></div>
-        ${renderTechnologyChoices(gear,profile,goal)}
-        <p class="tiny">Each crafted blueprint is selectable. Add-ons never count against the three procedural module slots. Nothing auto-generates until you press Optimize.</p>
-      </div>
-      <div class="side-footer">Unofficial fan project. Not affiliated with Hello Games. Built for manual, player-controlled planning.</div>
-    </aside>
-    <main class="main">
-      <div class="metrics">
-        <div class="panel metric accent"><div class="metric-name">TECH SLOTS</div><div class="metric-value">${openSlots}<span class="soft">/${profile.cols*profile.rows}</span></div><div class="metric-sub">Unlocked in planner</div></div>
-        <div class="panel metric violet"><div class="metric-name">SUPERCHARGED</div><div class="metric-value">${profSC.length}<span class="soft">/${scCount}</span></div><div class="metric-sub">Marked locations</div></div>
-        <div class="panel metric"><div class="metric-name">ADJACENCY LINKS</div><div class="metric-value">${stats?stats.connections:'—'}</div><div class="metric-sub">Same-family shared edges</div></div>
-        <div class="panel metric"><div class="metric-name">LAYOUT SCORE</div><div class="metric-value">${stats?Math.round(stats.score):'—'}</div><div class="metric-sub">Relative planning metric</div></div>
-      </div>
-      <section class="panel planner" aria-labelledby="grid-heading">
-        <div class="planner-head"><div><div class="planner-title"><h2 id="grid-heading">${esc(profile.name.trim()||gear.name)} technology grid</h2><span class="${profile.layout&&!profile.dirty?'ready':'pending'}">${esc(status(profile))}</span></div><p class="helper">${esc(gear.subtitle)}${gear.vehicleOptions?' · '+esc(gear.vehicleOptions[profile.vehicle]):''} · Select slot locations to match your in-game inventory.</p></div>
-          <div class="planner-settings"><label class="sr-only" for="grid-cols">Columns</label><select id="grid-cols" class="small-select">${selectorOptions([6,7,8,9,10],profile.cols,n=>n+' columns')}</select><label class="sr-only" for="grid-rows">Rows</label><select id="grid-rows" class="small-select">${selectorOptions([3,4,5,6],profile.rows,n=>n+' rows')}</select></div>
+    <div class="command-heading"><div><span class="eyebrow"><span class="signal-dot"></span> // TRAVELLER LOADOUT COMMAND</span><h1>Build for <em>what's out there.</em></h1><p>Every slot matters. Design the loadout, find your synergies, and bring the plan into your game.</p></div><div class="command-aside"><span>OPERATIONS / 05 SYSTEMS</span><strong>TECHNOLOGY WORKBENCH</strong><small>Offline-ready · Saved to this browser</small></div></div>
+    <nav class="gear-nav" aria-label="Equipment types">${gearKeys.map((k,i)=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${ICONS.render(DATA.gear[k].icon,'gear-glyph')}</span><span class="gear-text"><b>${esc(DATA.gear[k].name)}</b><small>0${i+1} / EQUIPMENT</small></span><span class="gear-arrow">↗</span></button>`).join('')}</nav>
+    <section class="loadout-banner" aria-label="Current loadout">
+      <div class="loadout-identity"><span class="loadout-badge">${ICONS.render(gear.icon,'gear-glyph')}</span><div><div class="eyebrow">ACTIVE PROFILE / ${esc(gear.name.toUpperCase())}</div><h2>${esc(profile.name.trim()||gear.name)} <span class="class-badge">${esc(profile.cls)}-CLASS</span></h2><p>${esc(gear.subtitle)}${gear.vehicleOptions?' · '+esc(gear.vehicleOptions[profile.vehicle]):''}</p></div></div>
+      <div class="loadout-status ${profile.layout&&!profile.dirty?'ready':''}"><span class="status-dot"></span>${esc(status(profile))}</div>
+    </section>
+    <div class="workspace">
+      <aside class="panel config-panel ${configOpen?'is-open':''}" id="config-panel">
+        <div class="panel-heading"><div><div class="eyebrow">01 / CONFIGURE</div><h3>Loadout setup</h3></div><button class="collapse-button" data-action="panel" data-panel="config" aria-expanded="${configOpen}" aria-controls="config-body"><span class="when-closed">Open settings ⌄</span><span class="when-open">Close settings ⌃</span></button></div>
+        <div class="config-body" id="config-body">
+          <div class="config-block"><div class="form-row"><label class="label" for="gear-name">Loadout name</label><input id="gear-name" class="control" maxlength="80" placeholder="${esc(gear.placeholder)}" value="${esc(profile.name)}"></div>
+            <div class="controls-2"><div class="form-row"><label class="label" for="gear-class">Equipment class</label><select id="gear-class" class="control" ${gear.fixedSC?'disabled title="Supercharged slots do not scale with class for this equipment"':''}>${selectorOptions(['C','B','A','S'],profile.cls,v=>v+' class')}</select></div><div class="form-row"><label class="label" for="gear-target">Upgrade target</label><select id="gear-target" class="control">${selectorOptions(['S','X'],profile.target,v=>v+' class')}</select></div></div>
+            ${gear.vehicleOptions?`<div class="form-row"><label class="label" for="vehicle">Exocraft model</label><select id="vehicle" class="control">${Object.entries(gear.vehicleOptions).map(([id,name])=>`<option value="${id}" ${profile.vehicle===id?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="tiny">Each vehicle retains its own saved loadout.</p></div>`:''}
+            <div class="form-row"><label class="label" for="goal">Optimization focus</label><select id="goal" class="control">${Object.entries(gear.goals).map(([id,g])=>`<option value="${id}" ${id===profile.goal?'selected':''}>${esc(g.label)}</option>`).join('')}</select></div>
+            <div class="form-row"><label class="label">Rolled modules / family</label><div class="segmented" role="group" aria-label="Module cap">${[1,2,3].map(i=>`<button data-action="depth" data-depth="${i}" class="${i===profile.depth?'current':''}" aria-pressed="${i===profile.depth}">${i}</button>`).join('')}</div><p class="tiny">Crafted blueprints do not use these slots.</p></div>
+          </div>
+          <div class="library-heading"><div><span class="eyebrow">02 / TECHNOLOGY LIBRARY</span><h3>Installed systems <span>${sorted.length} selected</span></h3></div></div>
+          <div class="library-search"><span aria-hidden="true">⌕</span><label class="sr-only" for="search-tech">Search technology</label><input id="search-tech" type="search" placeholder="Search technology or blueprint" value="${esc(technologyQuery)}" autocomplete="off"></div>
+          <div class="family-list" id="family-list">${renderTechnologyChoices(gear,profile,goal)}</div>
+          <div class="config-note">Choose your systems and individual blueprints. Nothing auto-generates until you press <strong>Optimize layout</strong>.</div>
         </div>
-        <div class="modes" role="group" aria-label="Technology grid editing modes">
-          <button data-action="mode" data-mode="move" class="mode ${editing==='move'?'active':''}" aria-pressed="${editing==='move'}">↔ Move tech</button>
-          <button data-action="mode" data-mode="charge" class="mode ${editing==='charge'?'active':''}" aria-pressed="${editing==='charge'}">✧ Mark supercharged</button>
-          <button data-action="mode" data-mode="lock" class="mode ${editing==='lock'?'active':''}" aria-pressed="${editing==='lock'}">▨ Lock / unlock</button>
-          <button data-action="clear-sc" class="mode" title="Remove all example supercharged slots">Clear SC</button>
+      </aside>
+      <main class="workbench">
+        <div class="metrics" aria-label="Technology grid metrics">
+          <div class="metric"><span class="metric-icon" aria-hidden="true">▦</span><div><div class="metric-name">OPEN SLOTS</div><div class="metric-value">${openSlots}<span>/${profile.cols*profile.rows}</span></div></div></div>
+          <div class="metric purple"><span class="metric-icon" aria-hidden="true">✦</span><div><div class="metric-name">SUPERCHARGED</div><div class="metric-value">${profSC.length}<span>/${scCount}</span></div></div></div>
+          <div class="metric"><span class="metric-icon" aria-hidden="true">⌁</span><div><div class="metric-name">ADJACENCY</div><div class="metric-value">${stats?stats.connections:'—'}<span> links</span></div></div></div>
+          <div class="metric score"><span class="metric-icon" aria-hidden="true">◈</span><div><div class="metric-name">PLAN SCORE</div><div class="metric-value">${stats?Math.round(stats.score):'—'}</div></div></div>
         </div>
-        <div class="grid-scroll"><div class="tech-grid" style="--columns:${profile.cols}" role="group" aria-label="Technology layout with ${profile.rows} rows and ${profile.cols} columns">${Array.from({length:profile.cols*profile.rows},(_,i)=>renderCell(i,gear,profile)).join('')}</div></div>
-        <div class="grid-legend"><span><i class="swatch tlswatch"></i> Installed technology</span><span><i class="swatch scswatch"></i> Supercharged</span><span><i class="swatch lkswatch"></i> Locked</span><span>CORE = base · U1 = rolled module · TECH = crafted blueprint</span></div>
-        ${profile.scExample?`<div class="notice warning"><strong>Example supercharged locations.</strong> These are illustrative, not your actual in-game coordinates. Select <b>Clear SC</b>, then mark your own slots for a personalized result.</div>`:''}
-        ${scMismatched?`<div class="notice warning"><strong>Slot-count check:</strong> You marked ${profSC.length} supercharged slots; ${scCount} are expected for this equipment setting. The planner can still run, but verify your layout.</div>`:''}
-        ${profile.layout&&profile.dirty?`<div class="notice warning">The layout or settings have changed since optimization. Select <strong>Optimize layout</strong> to calculate a new arrangement.</div>`:''}
-        ${hasSkipped?`<div class="notice warning">${profile.layout.skipped.length} requested technology tiles could not fit. Not placed: ${esc(profile.layout.skipped.slice(0,5).map(t=>t.label).join(', '))}${profile.layout.skipped.length>5?' …':''}. Enlarge the grid, unlock slots, reduce module count or disable a lower-priority group.</div>`:''}
-        ${activeTile?renderInspector(activeTile,gear):''}
-        <div class="toolbar-bottom"><div class="action-row"><button class="btn primary" data-action="optimize">✧ Optimize layout</button><button class="btn" data-action="copy" ${!profile.layout?'disabled':''}>⧉ Copy build</button></div><div class="action-row"><button class="btn quiet" data-action="clear-layout">Clear layout</button><button class="btn quiet warn" data-action="reset">Reset profile</button></div></div>
-        <div class="score-explainer">The optimizer rewards compatible shared edges and priority supercharged placements. Score is a comparative heuristic, <strong>not</strong> the game's hidden damage, shield, range or other stat formula.</div>
-      </section>
-      <div class="bottom-grid"><section class="panel detail-panel"><div class="catalog-head"><h3>Optimization briefing</h3><span class="eyebrow">${esc(goal.label)}</span></div>
-        <p class="intro">${esc(goal.tip)}</p>
-        ${profile.layout?renderBriefing(gear,profile,sorted,stats):`<div class="empty-state"><span class="empty-icon">✧</span><span><strong>Your planner is ready.</strong> Choose technology families, mark your actual supercharged slots and click <b>Optimize layout</b>. No build is generated automatically.</span></div>`}
-        <div class="notice"><strong>Equipment note:</strong> ${esc(gear.note)}</div>
-      </section><section class="panel detail-panel"><div class="catalog-head"><h3>Technology plan</h3><span class="eyebrow">${profile.target}-class target</span></div>
-        <p class="intro">Place compatible technology next to one another; standalone utilities and cosmetics have no assumed adjacency bonus. Compare actual module rolls in-game.</p>
-        ${sorted.length?sorted.map((id,i)=>renderFamilyCard(id,gear,profile,i)).join(''):'<div class="empty-state">Enable a technology family to begin.</div>'}
-      </section></div>
-      <section class="panel guide"><div class="heading-line"><h3>How to use ATLAS MAX</h3><span class="muted">Three steps. No save-file access.</span></div>
-        <div class="guide-steps"><div class="step"><span class="step-num">01 / MATCH</span><strong>Recreate your inventory</strong><p>Choose grid dimensions, lock unavailable slots, then mark the real supercharged locations.</p></div>
-        <div class="step"><span class="step-num">02 / PRIORITIZE</span><strong>Choose tech & blueprints</strong><p>Pick your priorities, procedural modules, and the exact crafted technologies you own or want to install.</p></div>
-        <div class="step"><span class="step-num">03 / OPTIMIZE</span><strong>Apply the arrangement</strong><p>Generate a compact layout. Then compare your actual stats and rearrange technologies inside the game.</p></div></div>
-        <div class="guide-footer">Mechanics references: ${DATA.sources.map(s=>`<a target="_blank" rel="noopener noreferrer" href="${esc(s.url)}">${esc(s.name)} ↗</a>`).join('')} · Current reference: ${esc(DATA.release)}.</div>
-      </section>
-    </main></div>
-    <footer class="footer"><span>ATLAS MAX // UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Profiles saved in this browser · Not affiliated with Hello Games</span></footer>
-  `;
+        <section class="panel planner" aria-labelledby="grid-heading">
+          <div class="planner-head"><div><div class="eyebrow">03 / TECHNOLOGY MATRIX</div><h2 id="grid-heading">${esc(profile.name.trim()||gear.name)} technology grid</h2><p class="helper">Match your real inventory first. Select technologies to inspect connections and swap positions.</p></div><div class="planner-settings"><label class="sr-only" for="grid-cols">Columns</label><select id="grid-cols" class="small-select">${selectorOptions([6,7,8,9,10],profile.cols,n=>n+' cols')}</select><label class="sr-only" for="grid-rows">Rows</label><select id="grid-rows" class="small-select">${selectorOptions([3,4,5,6],profile.rows,n=>n+' rows')}</select></div></div>
+          <div class="modes" role="group" aria-label="Technology grid editing modes"><span class="mode-label">EDIT MODE</span><button data-action="mode" data-mode="move" class="mode ${editing==='move'?'active':''}" aria-pressed="${editing==='move'}">⤧ <span>Move tech</span></button><button data-action="mode" data-mode="charge" class="mode ${editing==='charge'?'active':''}" aria-pressed="${editing==='charge'}">✦ <span>Supercharged</span></button><button data-action="mode" data-mode="lock" class="mode ${editing==='lock'?'active':''}" aria-pressed="${editing==='lock'}">▧ <span>Lock slots</span></button><button data-action="clear-sc" class="mode subtle" title="Remove all marked supercharged positions">Clear SC</button></div>
+          <div class="grid-frame"><div class="grid-utility"><span><span class="live-dot"></span> GRID CONFIGURATION</span><span>${profile.cols} × ${profile.rows} / ${profile.cols*profile.rows} POSITIONS</span></div>
+            <div class="grid-scroll"><div class="tech-grid" style="--columns:${profile.cols}" role="group" aria-label="Technology layout with ${profile.rows} rows and ${profile.cols} columns">${Array.from({length:profile.cols*profile.rows},(_,i)=>renderCell(i,gear,profile)).join('')}</div></div>
+            <div class="grid-footer"><span>${tilesInGrid} technologies placed</span><div class="occupancy"><span style="width:${pct}%"></span></div><span>${pct}% occupied</span></div>
+          </div>
+          <div class="grid-legend"><span><i class="swatch tlswatch"></i> Technology</span><span><i class="swatch scswatch"></i> Supercharged</span><span><i class="swatch adjwatch"></i> Adjacency</span><span><i class="swatch lkswatch"></i> Locked</span></div>
+          <div class="hint-line">${editing==='move'?'↔ Drag a module or select two slots to swap. Tap a module to inspect it.':editing==='charge'?'✦ Select a position to add or remove a supercharged marker.':'▧ Select slots to lock or unlock their positions.'} <span>CORE = base · U1–U3 = rolled · TECH = crafted</span></div>
+          ${profile.scExample?`<div class="notice warning"><strong>Example supercharged positions.</strong> These aren't your real slot coordinates. Choose <b>Clear SC</b> and mark your own for a personalized build.</div>`:''}
+          ${scMismatched?`<div class="notice warning"><strong>Slot-count check:</strong> ${profSC.length} supercharged positions marked; ${scCount} expected for this equipment setting. Verify your inventory.</div>`:''}
+          ${profile.layout&&profile.dirty?`<div class="notice warning"><strong>Review changes.</strong> Your settings or placement changed. Optimize again when you're ready for a fresh result.</div>`:''}
+          ${hasSkipped?`<div class="notice warning"><strong>${profile.layout.skipped.length} requested technologies didn't fit.</strong> ${esc(profile.layout.skipped.slice(0,5).map(t=>t.label).join(', '))}${profile.layout.skipped.length>5?' …':''}. Unlock slots, enlarge the grid or reduce selected technology.</div>`:''}
+          <div class="toolbar-bottom"><div class="action-row"><button class="btn primary" data-action="optimize">✧ Optimize layout <span>↗</span></button><button class="btn" data-action="copy" ${!profile.layout?'disabled':''}>⧉ Copy build</button></div><div class="action-row"><button class="btn quiet" data-action="clear-layout">Clear layout</button><button class="btn quiet warn" data-action="reset">Reset</button></div></div>
+          <div class="score-explainer">Planning score is a relative heuristic for compatible adjacency and supercharged placement—not actual in-game damage, range or shield statistics.</div>
+        </section>
+        <details class="panel guide"><summary><span>◈ <strong>How to use ATLAS MAX</strong></span><span>3-step quick guide <b>⌄</b></span></summary><div class="guide-steps"><div class="step"><span class="step-num">01 / MATCH</span><strong>Recreate your inventory</strong><p>Set dimensions, lock missing slots, and mark real supercharged positions.</p></div><div class="step"><span class="step-num">02 / PRIORITIZE</span><strong>Choose tech & blueprints</strong><p>Select the technology families and crafted upgrades appropriate to your equipment.</p></div><div class="step"><span class="step-num">03 / OPTIMIZE</span><strong>Apply your arrangement</strong><p>Generate a layout and transfer the placement to your in-game inventory.</p></div></div><div class="guide-footer">Reference material: ${DATA.sources.map(s=>`<a target="_blank" rel="noopener noreferrer" href="${esc(s.url)}">${esc(s.name)} ↗</a>`).join('')}.</div></details>
+      </main>
+      <aside class="panel insight-panel ${insightsOpen?'is-open':''}"><div class="panel-heading"><div><div class="eyebrow">04 / LIVE ANALYSIS</div><h3>Build intelligence</h3></div><button class="collapse-button" data-action="panel" data-panel="insights" aria-expanded="${insightsOpen}" aria-controls="insights-body"><span class="when-closed">Show ⌄</span><span class="when-open">Hide ⌃</span></button></div>
+        <div id="insights-body" class="insights-body"><section class="inspector-card"><div class="inspector-kicker">SELECTED MODULE <span>◉ LIVE</span></div>${activeTile?renderInspector(activeTile,gear):`<div class="inspect-empty"><span class="inspect-placeholder">${ICONS.render(gear.icon,'gear-glyph')}</span><strong>No module selected</strong><p>${profile.layout?'Select an installed tile to view its role and system details.':'Generate a layout to inspect technology placement and adjacency.'}</p></div>`}</section>
+          <section class="insight-metrics"><div class="insight-metric"><span>Installed / capacity</span><strong>${tilesInGrid} <small>/ ${openSlots}</small></strong></div><div class="progress-track"><span style="width:${pct}%"></span></div><div class="insight-metric"><span>Goal preset</span><strong>${esc(goal.label)}</strong></div><div class="insight-metric"><span>Upgrade target</span><strong>${esc(profile.target)}-class modules</strong></div></section>
+          <section class="briefing"><div class="catalog-head"><h3>Priority briefing</h3><span>✧</span></div><p class="intro">${esc(goal.tip)}</p>${profile.layout?renderBriefing(gear,profile,sorted,stats):`<div class="empty-state"><span>✧</span><p><strong>Your planner is ready.</strong> Nothing has been generated yet. No build is generated automatically; click Optimize layout when ready.</p></div>`}<div class="notice"><strong>Equipment note</strong><p>${esc(gear.note)}</p></div></section>
+          <details class="technology-plan"><summary><span>Technology plan <small>${sorted.length} families</small></span><span>⌄</span></summary><div class="plan-content">${sorted.length?sorted.map((id,i)=>renderFamilyCard(id,gear,profile,i)).join(''):'<div class="empty-state">Enable a technology family to begin.</div>'}</div></details>
+        </div>
+      </aside>
+    </div>
+    <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Local profiles · No game save access · Not affiliated with Hello Games</span></footer>`;
+  if(technologyQuery)applySearch();
 }
 function renderCell(i,gear,profile){
   const locked=profile.blocked.includes(i),sc=profile.sc.includes(i);
@@ -236,11 +252,14 @@ function renderCell(i,gear,profile){
   const text=locked?'LOCK':tile?(tile.role==='core'?'CORE':tile.role==='crafted'?'TECH':'U'+tile.sequence):(sc?'SC':'+');
   const name=locked?'Unavailable':tile?tile.label:sc?'Supercharged':'Empty';
   const subtitle=tile?(tile.role==='core'?'Core technology':tile.role==='crafted'?'Crafted blueprint':`Upgrade ${tile.sequence}`):'';
-  return `<button type="button" class="cell ${locked?'locked':''} ${sc?'sc':''} ${tile?'tile '+fam.color:''} ${selectedCell===i?'selected':''}" data-action="cell" data-cell="${i}" aria-label="Row ${Math.floor(i/profile.cols)+1}, column ${i%profile.cols+1}: ${esc(name)}${sc?' (supercharged)':''}${locked?' (locked)':''}" title="${esc(name)}${tile?' — '+esc(subtitle):''}">${tile?`<span class="slot-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'slot-glyph')}</span><span class="cell-name">${esc(tile.role==='crafted'?tile.label:fam.name)}</span><span class="cell-rank">${esc(text)}</span>`:locked?`<span class="slot-icon lock-icon">${ICONS.render('lock','slot-glyph')}</span><span class="cell-rank">LOCKED</span>`:sc?`<span class="slot-icon sc-empty-icon">${ICONS.render('spark','slot-glyph')}</span><span class="cell-rank">SC SLOT</span>`:`<span class="cell-code">+</span><span class="number">${i+1}</span>`}</button>`;
+  const edges=adjacencyFor(i,gear,profile,tile);
+  const selectedFamily=activeTile&&activeTile.family===tile?.family;
+  return `<button type="button" class="cell ${locked?'locked':''} ${sc?'sc':''} ${tile?'tile '+fam.color:''} ${selectedCell===i?'selected':''} ${selectedFamily?'same-family':''} ${activeTile&&tile&&!selectedFamily?'deemphasized':''}" data-action="cell" data-cell="${i}" ${tile&&editing==='move'?'draggable="true"':''} aria-label="Row ${Math.floor(i/profile.cols)+1}, column ${i%profile.cols+1}: ${esc(name)}${sc?' (supercharged)':''}${locked?' (locked)':''}" title="${esc(name)}${tile?' — '+esc(subtitle):''}">${edges.map(side=>`<span class="adjacency-edge ${side}" aria-hidden="true"></span>`).join('')}${tile?`<span class="slot-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'slot-glyph')}</span><span class="cell-name">${esc(tile.role==='crafted'?tile.label:fam.name)}</span><span class="cell-rank">${esc(text)}</span>`:locked?`<span class="slot-icon lock-icon">${ICONS.render('lock','slot-glyph')}</span><span class="cell-rank">LOCKED</span>`:sc?`<span class="slot-icon sc-empty-icon">${ICONS.render('spark','slot-glyph')}</span><span class="cell-rank">SC SLOT</span>`:`<span class="cell-code">+</span><span class="number">${String(i+1).padStart(2,'0')}</span>`}</button>`;
 }
 function renderInspector(tile,gear){
   const fam=gear.families[tile.family];if(!fam)return'';
-  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'family-glyph')}</span><strong>${esc(tile.label)} · ${tile.role==='core'?'Core technology':tile.role==='crafted'?'Crafted blueprint':'Upgrade slot '+tile.sequence}</strong></div><div class="mini">${esc(fam.why)}</div><div class="mini">${tile.role==='upgrade'&&tile.sequence===1?'U1 is a placeholder for the strongest module roll you actually own. ':''}Use Move tech to click this tile and another slot to swap them.</div></div>`;
+  const role=tile.role==='core'?'Base technology':tile.role==='crafted'?'Crafted blueprint':`Rolled upgrade / slot ${tile.sequence}`;
+  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'family-glyph')}</span><div><strong>${esc(tile.label)}</strong><small>${esc(role)}</small></div></div><p>${esc(fam.why)}</p><div class="inspector-note">${tile.role==='upgrade'&&tile.sequence===1?'U1 represents your best module roll, not a guaranteed stat value. ':'Use Move tech to select another slot or drag this module to relocate it.'}</div></div>`;
 }
 function renderBriefing(gear,profile,sorted,stats){
   return `<div class="priority-item"><span class="number-badge">✧</span><div><h4>${stats.usedSC}/${profile.sc.length} marked supercharged positions filled</h4><p>Priority weighted to your ${esc(gear.goals[profile.goal].label.toLowerCase())} goal, using your current marked positions.</p></div></div>
@@ -331,6 +350,7 @@ app.addEventListener('click',event=>{
   const button=event.target.closest('button[data-action]');if(!button)return;
   const action=button.dataset.action;const{key,gear,profile}=context();
   if(action==='gear'){if(gearKeys.includes(button.dataset.gear)){state.current=button.dataset.gear;selectedCell=null;activeTile=null;editing='move';save();render();}return;}
+  if(action==='panel'){if(button.dataset.panel==='config')configOpen=!configOpen;else if(button.dataset.panel==='insights')insightsOpen=!insightsOpen;render();return;}
   if(action==='depth'){profile.depth=clamp(button.dataset.depth,1,3);layoutChanged(profile);return;}
   if(action==='mode'){editing=button.dataset.mode;selectedCell=null;activeTile=null;render();return;}
   if(action==='cell'){handleCell(Number(button.dataset.cell));return;}
@@ -405,5 +425,52 @@ app.addEventListener('toggle',event=>{
   else expandedAddons.delete(t.dataset.addonGroup);
 },true);
 app.addEventListener('input',event=>{if(event.target.id==='gear-name'){context().profile.name=event.target.value.slice(0,80);save();}});
+function applySearch(){
+  const list=document.getElementById('family-list');if(!list||!list.querySelectorAll)return;
+  const query=technologyQuery.trim().toLowerCase();
+  list.querySelectorAll('.family-entry').forEach(entry=>entry.classList.toggle('filtered-out',!!query&&!entry.dataset.search.includes(query)));
+  let group=null,hasVisible=false;
+  list.querySelectorAll('.tech-section-title, .family-entry').forEach(el=>{
+    if(el.classList.contains('tech-section-title')){
+      if(group)group.classList.toggle('filtered-out',!hasVisible);
+      group=el;hasVisible=false;
+    }else if(!el.classList.contains('filtered-out'))hasVisible=true;
+  });
+  if(group)group.classList.toggle('filtered-out',!hasVisible);
+}
+app.addEventListener('input',event=>{
+  if(event.target.id==='search-tech'){
+    technologyQuery=event.target.value.slice(0,100);
+    applySearch();
+  }
+});
+function dragCell(event){const cell=event.target.closest?.('.cell[data-cell]');return cell?Number(cell.dataset.cell):null;}
+app.addEventListener('dragstart',event=>{
+  const {profile}=context();const cell=dragCell(event);
+  if(cell===null||editing!=='move'||!profile.layout||profile.layout.map[cell]<0){event.preventDefault();return;}
+  dragFrom=cell;
+  event.dataTransfer?.setData('text/plain',String(cell));
+  if(event.dataTransfer)event.dataTransfer.effectAllowed='move';
+});
+app.addEventListener('dragover',event=>{
+  if(dragFrom===null)return;
+  const cell=event.target.closest?.('.cell[data-cell]');if(!cell)return;
+  if(context().profile.blocked.includes(Number(cell.dataset.cell)))return;
+  event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect='move';
+  app.querySelectorAll('.cell.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  cell.classList.add('drag-over');
+});
+app.addEventListener('drop',event=>{
+  if(dragFrom===null)return;
+  const cell=dragCell(event),from=dragFrom;dragFrom=null;
+  app.querySelectorAll('.cell.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  if(cell===null||cell===from)return;
+  event.preventDefault();
+  const {profile}=context();if(!profile.layout||profile.blocked.includes(cell))return;
+  [profile.layout.map[from],profile.layout.map[cell]]=[profile.layout.map[cell],profile.layout.map[from]];
+  selectedCell=null;activeTile=profile.layout.map[cell]>=0?profile.layout.tiles[profile.layout.map[cell]]:null;
+  profile.dirty=true;save();render();
+});
+app.addEventListener('dragend',()=>{dragFrom=null;app.querySelectorAll('.cell.drag-over').forEach(el=>el.classList.remove('drag-over'));});
 render();
 })();

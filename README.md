@@ -1,6 +1,6 @@
-# ATLAS MAX — Full Equipment Catalog (October 2026)
+# ATLAS MAX — Hybrid Command Deck (Version 1.4, October 2026)
 
-ATLAS MAX is an unofficial, self-contained **No Man’s Sky equipment-layout planner**. This release upgrades the four smaller catalogs to the same named-technology, crafted-blueprint and rolled-module model already used for the Exosuit.
+ATLAS MAX is an unofficial, self-contained **No Man’s Sky equipment-layout planner**. This release keeps the complete five-category technology catalog and optimization engine from Version 1.3, and adds a redesigned **No Man's Sky-inspired + premium futuristic** technology workbench.
 
 There is **no npm install, internet connection, account, API key, or build step**. The browser saves profiles locally. A copy of the game or a save-file connection is not required to explore the planner.
 
@@ -12,6 +12,18 @@ There is **no npm install, internet connection, account, API key, or build step*
 4. Existing profiles in the same browser's local storage are loaded and retained, with newly added default systems made available where appropriate. Imported/exported JSON loadouts are supported.
 
 **Important:** Do not upload only `index.html` or omit `catalog-expanded.js`. It is the additional, required data catalog that expands the other equipment types. You can replace all files from this ZIP over the previous website files.
+
+## What's new in Version 1.4 — visual redesign
+
+- **Horizontal equipment navigation** for Exosuit, Multi-tool, Starship, Freighter and Exocraft. All original technologies, family counts and six separate Exocraft saves are preserved.
+- **Three-column desktop layout:** loadout settings and searchable technology library on the left; larger technology grid and workflow controls in the center; live module inspection, progress, briefing and technology plan on the right.
+- **More expressive technology tiles:** color-coded SVG illustrations, class markers, clear core/rolled/crafted labels, purple supercharged glow, locked slots, active selections and glowing same-family adjacency-edge indicators. The highlights follow the existing scoring rules, including the special Star Seed/Remembrance pair and blueprint exceptions.
+- **Drag-and-drop technology swaps** on desktop. The original two-click/tap swap flow remains available, including on touchscreens. Changes mark the arrangement as needing review; they never auto-run the optimizer.
+- **Searchable technology catalog** for large groups and blueprints. Search only filters what appears in the list; it never unchecks technologies or edits saved profiles.
+- **Mobile layout** with expandable Settings and Build Intelligence panels, larger touch areas and horizontally scrollable grids. The technology list stays navigable on narrow screens.
+- **Refined activity and status indicators:** selected goal, class, placed technology count, open-slot utilization, adjacency-link count, supercharged positions and relative planning score.
+
+**Save compatibility:** This is a presentation/interface upgrade, not a data migration. The profile storage key, JSON export format, optimizer algorithm, named catalogs and existing save behavior are unchanged. On your own device/browser, existing saved profiles should appear automatically when you replace the files. Back up using **Export** first as good practice.
 
 ## Expanded equipment sections
 
@@ -62,12 +74,12 @@ The existing 15-category expanded Exosuit remains intact, including environmenta
 - `catalog-expanded.js` — expanded Multi-tool, Starship, Freighter and Exocraft databases
 - `icons.js` — offline SVG component icon designs
 - `optimizer.js` — placement scoring, capacity handling, crafted-component assembly
-- `app.js` — UI, profile migration, per-model Exocraft saves, JSON import/export
-- `styles.css` — responsive styling
+- `app.js` — redesigned UI, module inspection, technology search, drag/drop, profile migration, per-model Exocraft saves, JSON import/export
+- `styles.css` — full hybrid command-deck visual system and responsive styling
 - `favicon.svg` — site identity
 - `tests/` — Node.js regression tests
 
-Run the checks with `node --test tests/*.cjs` (no dependencies). The packaged release passed all **23** automated tests. A local browser screenshot check did not complete in the environment, so automated testing is not a claim of full visual/browser compatibility.
+Run the checks with `node --test tests/*.cjs` (no dependencies). The packaged release passed all **26** automated tests. A local browser screenshot check did not complete in the environment, so automated testing is not a claim of full visual/browser compatibility.
 
 ## Sources and references
 
