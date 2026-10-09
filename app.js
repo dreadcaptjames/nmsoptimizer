@@ -2,6 +2,7 @@
 'use strict';
 const DATA=window.ATLAS_DATA;
 const SOLVER=window.ATLAS_SOLVER;
+const ICONS=window.ATLAS_ICONS;
 const STORAGE='atlas-max-v1';
 const gearKeys=Object.keys(DATA.gear);
 const app=document.getElementById('app');
@@ -88,7 +89,7 @@ function render(){
     <section class="hero"><div><div class="eyebrow">// Traveller loadout command</div><h1>Every slot matters.<br><em>Make yours count.</em></h1><p class="lead">Design your technology grid around actual supercharged slots, same-family adjacency and the way you play. No random builds, no imaginary damage numbers.</p></div><div class="hero-side"><strong>YOUR GAME. YOUR BUILD.</strong>Plan your layout here, then move technology manually in-game. Nothing connects to your save file.</div></section>
     <div class="workspace"><aside class="panel side">
       <div class="side-block"><div class="section-caption">01 / Choose equipment</div><nav class="gear-list" aria-label="Equipment types">
-        ${gearKeys.map(k=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${DATA.gear[k].icon}</span>${esc(DATA.gear[k].name)}<span class="gear-arrow">›</span></button>`).join('')}
+        ${gearKeys.map(k=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${ICONS.render(DATA.gear[k].icon,'gear-glyph')}</span>${esc(DATA.gear[k].name)}<span class="gear-arrow">›</span></button>`).join('')}
       </nav></div>
       <div class="side-block"><div class="section-caption">02 / Your equipment</div>
         <div class="form-row"><label for="gear-name" class="label">Loadout name</label><input id="gear-name" class="control" maxlength="80" placeholder="${esc(gear.placeholder)}" value="${esc(profile.name)}"></div>
@@ -98,7 +99,7 @@ function render(){
         <div class="form-row"><label class="label">Procedural modules per family</label><div class="segmented" role="group" aria-label="Module cap">${[1,2,3].map(i=>`<button data-action="depth" data-depth="${i}" class="${i===profile.depth?'current':''}" aria-pressed="${i===profile.depth}">${i}</button>`).join('')}</div><p class="tiny">Crafted blueprint technology does not consume these module slots.</p></div>
       </div>
       <div class="side-block"><div class="section-caption">03 / Include technology <small>${sorted.length} selected</small></div>
-        ${Object.entries(gear.families).map(([id,f])=>`<div class="family-row"><input type="checkbox" id="fam-${id}" data-family="${id}" ${profile.enabled.includes(id)?'checked':''}><label for="fam-${id}"><span class="fam-title">${esc(f.name)} <span class="prio">${'◆'.repeat(Math.min(3,Math.ceil((goal.weights[id]||1)/2.5)))}</span></span><span class="fam-sub">${f.maxUpgrades?`Core/group + up to ${Math.min(profile.depth,f.maxUpgrades)} modules`:'Blueprint technology only'}</span></label></div>`).join('')}
+        ${Object.entries(gear.families).map(([id,f])=>`<div class="family-row"><input type="checkbox" id="fam-${id}" data-family="${id}" ${profile.enabled.includes(id)?'checked':''}><label for="fam-${id}"><span class="fam-topline"><span class="family-icon ${esc(f.color)}">${ICONS.render(f.icon,'family-glyph')}</span><span class="fam-title">${esc(f.name)} <span class="prio">${'◆'.repeat(Math.min(3,Math.ceil((goal.weights[id]||1)/2.5)))}</span></span></span><span class="fam-sub">${f.maxUpgrades?`Core/group + up to ${Math.min(profile.depth,f.maxUpgrades)} modules`:'Blueprint technology only'}</span></label></div>`).join('')}
         <p class="tiny">Changing settings never auto-generates a layout. Select Optimize when ready.</p>
       </div>
       <div class="side-footer">Unofficial fan project. Not affiliated with Hello Games. Built for manual, player-controlled planning.</div>
@@ -121,7 +122,7 @@ function render(){
           <button data-action="clear-sc" class="mode" title="Remove all example supercharged slots">Clear SC</button>
         </div>
         <div class="grid-scroll"><div class="tech-grid" style="--columns:${profile.cols}" role="group" aria-label="Technology layout with ${profile.rows} rows and ${profile.cols} columns">${Array.from({length:profile.cols*profile.rows},(_,i)=>renderCell(i,gear,profile)).join('')}</div></div>
-        <div class="grid-legend"><span><i class="swatch tlswatch"></i> Installed technology</span><span><i class="swatch scswatch"></i> Supercharged</span><span><i class="swatch lkswatch"></i> Locked</span><span>U1 = reserve for your best rolled module</span></div>
+        <div class="grid-legend"><span><i class="swatch tlswatch"></i> Installed technology</span><span><i class="swatch scswatch"></i> Supercharged</span><span><i class="swatch lkswatch"></i> Locked</span><span>CORE = base tech · U1 = your best rolled module</span></div>
         ${profile.scExample?`<div class="notice warning"><strong>Example supercharged locations.</strong> These are illustrative, not your actual in-game coordinates. Select <b>Clear SC</b>, then mark your own slots for a personalized result.</div>`:''}
         ${scMismatched?`<div class="notice warning"><strong>Slot-count check:</strong> You marked ${profSC.length} supercharged slots; ${scCount} are expected for this equipment setting. The planner can still run, but verify your layout.</div>`:''}
         ${profile.layout&&profile.dirty?`<div class="notice warning">The layout or settings have changed since optimization. Select <strong>Optimize layout</strong> to calculate a new arrangement.</div>`:''}
@@ -153,14 +154,14 @@ function renderCell(i,gear,profile){
   const tileIndex=profile.layout?profile.layout.map[i]:-1;
   const tile=tileIndex>=0?profile.layout.tiles[tileIndex]:null;
   const fam=tile?gear.families[tile.family]:null;
-  const text=locked?'LOCK':tile?(tile.role==='core'?fam.short:'U'+tile.sequence):(sc?'✧':'+');
+  const text=locked?'LOCK':tile?(tile.role==='core'?'CORE':'U'+tile.sequence):(sc?'SC':'+');
   const name=locked?'Unavailable':tile?fam.name:sc?'Supercharged':'Empty';
   const subtitle=tile?(tile.role==='core'?'Core technology':`Upgrade ${tile.sequence}`):'';
-  return `<button type="button" class="cell ${locked?'locked':''} ${sc?'sc':''} ${tile?'tile '+fam.color:''} ${selectedCell===i?'selected':''}" data-action="cell" data-cell="${i}" aria-label="Row ${Math.floor(i/profile.cols)+1}, column ${i%profile.cols+1}: ${esc(name)}${sc?' (supercharged)':''}${locked?' (locked)':''}" title="${esc(name)}${tile?' — '+esc(subtitle):''}"><span class="cell-code">${esc(text)}</span>${tile?`<span class="cell-name">${esc(fam.name)}</span><span class="cell-rank">${subtitle}</span>`:sc?'<span class="cell-rank">SC SLOT</span>':'<span class="number">'+(i+1)+'</span>'}</button>`;
+  return `<button type="button" class="cell ${locked?'locked':''} ${sc?'sc':''} ${tile?'tile '+fam.color:''} ${selectedCell===i?'selected':''}" data-action="cell" data-cell="${i}" aria-label="Row ${Math.floor(i/profile.cols)+1}, column ${i%profile.cols+1}: ${esc(name)}${sc?' (supercharged)':''}${locked?' (locked)':''}" title="${esc(name)}${tile?' — '+esc(subtitle):''}">${tile?`<span class="slot-icon ${esc(fam.color)}">${ICONS.render(fam.icon,'slot-glyph')}</span><span class="cell-name">${esc(fam.name)}</span><span class="cell-rank">${esc(text)}</span>`:locked?`<span class="slot-icon lock-icon">${ICONS.render('lock','slot-glyph')}</span><span class="cell-rank">LOCKED</span>`:sc?`<span class="slot-icon sc-empty-icon">${ICONS.render('spark','slot-glyph')}</span><span class="cell-rank">SC SLOT</span>`:`<span class="cell-code">+</span><span class="number">${i+1}</span>`}</button>`;
 }
 function renderInspector(tile,gear){
   const fam=gear.families[tile.family];if(!fam)return'';
-  return `<div class="inspector"><strong>${esc(fam.name)} · ${tile.role==='core'?'Core technology':'Upgrade slot '+tile.sequence}</strong><div class="mini">${esc(tile.label||fam.name)} — ${esc(fam.why)}</div><div class="mini">${tile.role==='upgrade'&&tile.sequence===1?'U1 is a placeholder for the strongest module roll you actually own. ':''}Use Move tech to click this tile and another slot to swap them.</div></div>`;
+  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}">${ICONS.render(fam.icon,'family-glyph')}</span><strong>${esc(fam.name)} · ${tile.role==='core'?'Core technology':'Upgrade slot '+tile.sequence}</strong></div><div class="mini">${esc(tile.label||fam.name)} — ${esc(fam.why)}</div><div class="mini">${tile.role==='upgrade'&&tile.sequence===1?'U1 is a placeholder for the strongest module roll you actually own. ':''}Use Move tech to click this tile and another slot to swap them.</div></div>`;
 }
 function renderBriefing(gear,profile,sorted,stats){
   return `<div class="priority-item"><span class="number-badge">✧</span><div><h4>${stats.usedSC}/${profile.sc.length} marked supercharged positions filled</h4><p>Priority weighted to your ${esc(gear.goals[profile.goal].label.toLowerCase())} goal, using your current marked positions.</p></div></div>
@@ -170,7 +171,7 @@ function renderBriefing(gear,profile,sorted,stats){
 }
 function renderFamilyCard(id,gear,profile,i){
   const fam=gear.families[id];const count=Math.min(profile.depth,fam.maxUpgrades);
-  return `<div class="family-card"><div class="family-head"><strong><span style="color:var(--${fam.color})">◆</span> ${esc(fam.name)}</strong><span class="tag">PRIORITY ${i+1}</span></div><div class="family-desc">${esc(fam.why)}</div><div class="family-components">${fam.core?`<b>Core:</b> ${esc(fam.core)}`:'<b>Upgrade-only group</b>'}${count?` · <b>${count} ×</b> ${esc(fam.upgrade)}`:''}</div></div>`;
+  return `<div class="family-card"><div class="family-head"><strong class="family-heading"><span class="family-icon ${esc(fam.color)}">${ICONS.render(fam.icon,'family-glyph')}</span><span>${esc(fam.name)}</span></strong><span class="tag">PRIORITY ${i+1}</span></div><div class="family-desc">${esc(fam.why)}</div><div class="family-components">${fam.core?`<b>Core:</b> ${esc(fam.core)}`:'<b>Upgrade-only group</b>'}${count?` · <b>${count} ×</b> ${esc(fam.upgrade)}`:''}</div></div>`;
 }
 function toast(message,error=false){
   const old=document.querySelector('.toast');if(old)old.remove();if(toastTimer)clearTimeout(toastTimer);

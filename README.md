@@ -8,7 +8,7 @@ Open `index.html` in a browser, or publish this directory as a static website. E
 
 ## Publish on GitHub Pages
 
-1. Create a GitHub repository and upload **all files from inside this folder** into its root directory. Include `index.html`, `styles.css`, `data.js`, `optimizer.js`, `app.js` and `favicon.svg`.
+1. Create a GitHub repository and upload **all files from inside this folder** into its root directory. Include `index.html`, `styles.css`, `data.js`, `optimizer.js`, `icons.js`, `app.js` and `favicon.svg`.
 2. In the repository, open **Settings → Pages**.
 3. Set **Build and deployment** to **Deploy from a branch**, choose `main` and `/(root)`, and save.
 4. Visit the GitHub Pages URL shown in the Pages settings once GitHub has published it.
@@ -25,6 +25,7 @@ This website also works on Cloudflare Pages, Netlify, Vercel static hosting, or 
 - Manual tile swapping after optimization.
 - Per-equipment browser-local persistence, JSON profile export/import, and copyable text layouts.
 - Descriptions and next-step notes describing why technologies support the selected playstyle.
+- A purpose-built set of scalable, offline SVG icons for every equipment category and technology family. Matching symbols appear in the chooser, family lists, planning grid, inspection panel and technology plan. Core vs procedural modules are distinguished by CORE and U1/U2/U3 labels.
 
 ## What it does *not* do
 
@@ -42,6 +43,7 @@ Read the [NMS Resources technology layout guide](https://www.nomansskyresources.
 - To change optimization heuristics, edit `optimizer.js`.
 - To change interaction or persistence, edit `app.js`.
 - To edit the appearance, edit `styles.css`.
+- To change any technology icons, edit the equipment and family `icon` properties in `data.js`; the SVG drawings live in `icons.js`. The icons are original generic illustrations, not copied No Man’s Sky artwork.
 
 ## Testing
 
