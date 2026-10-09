@@ -24,23 +24,38 @@
   function assemble(gear, profile, capacity) {
     const goal = gear.goals[profile.goal];
     const active = (profile.enabled || []).filter(id => gear.families[id]).sort((a,b) =>
-      (goal.weights[b] || 1) - (goal.weights[a] || 1));
+      (goal.weights[b] || 0) - (goal.weights[a] || 0));
+    const selected = new Set(profile.addons || []);
     const request = [];
-    active.forEach(id => {
+    // Place critical cores and one procedural roll before optional technology.
+    // The module cap applies only to generated upgrades, never crafted blueprints.
+    for (const id of active) {
       const family = gear.families[id];
-      if (family.core) request.push({ id: id + ':core', family: id, role: 'core', sequence: 0, label: family.core });
-      else if (family.maxUpgrades > 0) request.push({ id: id + ':1', family: id, role: 'upgrade', sequence: 1, label: family.upgrade });
-    });
-    for (let sequence = 1; sequence <= Math.min(3, profile.depth || 3); sequence++) {
-      active.forEach(id => {
-        const family = gear.families[id];
-        if (sequence > family.maxUpgrades || (!family.core && sequence === 1)) return;
-        request.push({id: id + ':' + sequence, family: id, role: 'upgrade', sequence, label: family.upgrade});
-      });
+      if (family.core) request.push({id:id+':core',family:id,role:'core',sequence:0,label:family.core});
+      if (family.maxUpgrades > 0 && profile.depth >= 1)
+        request.push({id:id+':1',family:id,role:'upgrade',sequence:1,label:family.upgrade});
     }
-    // Cores are given precedence, then high-impact module slots. Nothing is fabricated
-    // to squeeze an excessive request into an undersized inventory.
-    return { tiles: request.slice(0,capacity), skipped: request.slice(capacity), requested: request.length };
+    for (let sequence = 2;sequence <= Math.min(3,profile.depth || 3);sequence++) {
+      for (const id of active) {
+        const family=gear.families[id];
+        if (sequence <= (family.maxUpgrades || 0))
+          request.push({id:id+':'+sequence,family:id,role:'upgrade',sequence,label:family.upgrade});
+      }
+    }
+    // Every named crafted technology is its own installable tile; these are not
+    // generic procedural upgrades and cannot consume the module limit.
+    for (const id of active) {
+      const family=gear.families[id];
+      const chosen=new Set();
+      for (const addon of family.addons || []) {
+        if (!selected.has(id+':'+addon.id)) continue;
+        if (addon.exclusive && chosen.has(addon.exclusive)) continue;
+        if (addon.exclusive) chosen.add(addon.exclusive);
+        request.push({id:id+':crafted:'+addon.id,family:id,role:'crafted',sequence:0,
+          addon:addon.id,label:addon.name,icon:addon.icon || family.icon});
+      }
+    }
+    return {tiles:request.slice(0,capacity),skipped:request.slice(capacity),requested:request.length};
   }
   function scoreMap(map, tiles, gear, goal, cols, rows, supercharged) {
     let score = 0, connections = 0, usedSC = 0;
@@ -53,9 +68,14 @@
       const family = gear.families[t.family];
       (groups[t.family] ||= []).push(p);
       if (sc.has(p)) {
-        const pref = family.sc === t.role;
-        const qualityHint = t.role === 'upgrade' ? (t.sequence === 1 ? 1.15 : t.sequence === 2 ? 1.0 : .87) : 1;
-        score += 6.2 * w * (pref ? 1.25 : .85) * qualityHint;
+        // Non-performance utilities and cosmetic tiles should not displace an
+        // upgrade from an SC slot. This never claims a real in-game multiplier.
+        if (family.sc === 'none' || family.adjacency === 'none') score -= 9;
+        else {
+          const pref = family.sc === t.role;
+          const qualityHint = t.role === 'upgrade' ? (t.sequence === 1 ? 1.15 : t.sequence === 2 ? 1.0 : .87) : .75;
+          score += 6.2 * w * (pref ? 1.25 : .75) * qualityHint;
+        }
         usedSC++;
       }
       // Only count right and lower edge to avoid doubling each adjacency.
@@ -63,15 +83,24 @@
       const down = p + cols < map.length ? tiles[map[p+cols]] : null;
       [right,down].forEach(other => {
         if (other && other.family === t.family) {
-          const coreBonus = other.role === 'core' || t.role === 'core' ? 1.12 : 1;
-          score += 3.5 * w * coreBonus;
-          connections++;
+          const isStoryPair = t.family === 'story' &&
+            ((t.addon === 'star' && other.addon === 'remembrance') ||
+             (t.addon === 'remembrance' && other.addon === 'star'));
+          if(isStoryPair){
+            // Verified health synergy: Star Seed beside Remembrance.
+            score += 40;
+            connections++;
+          }else if(family.adjacency !== 'none'){
+            const coreBonus = other.role === 'core' || t.role === 'core' ? 1.12 : 1;
+            score += 3.5 * w * coreBonus;
+            connections++;
+          }
         }
       });
     }
     // Small compactness preference reduces fragmented same-family islands.
     Object.entries(groups).forEach(([id,positions]) => {
-      if (positions.length < 2) return;
+      if (positions.length < 2 || gear.families[id].adjacency === 'none') return;
       const meanX = positions.reduce((s,p)=>s+(p%cols),0)/positions.length;
       const meanY = positions.reduce((s,p)=>s+Math.floor(p/cols),0)/positions.length;
       let spread = 0;

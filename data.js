@@ -10,19 +10,82 @@ window.ATLAS_DATA = Object.freeze({
   ],
   gear: {
     exosuit: {
-      name: 'Exosuit', icon: 'suit', subtitle: 'Personal survival systems',
+      name: 'Exosuit', icon: 'suit', subtitle: 'Movement, life support, specialized hazards & utilities',
       placeholder: 'My Exosuit', fixedSC: 3,
-      note: 'Exosuit supercharged slots are fixed for all players. Match your actual unlocked grid before using the layout.',
+      note: 'The Exosuit has three fixed supercharged positions. Crafted blueprints are separate from the three-installed procedural-module limit. Optional story, expedition and cosmetic technology should only be selected if you own it. Hazard modules are separated by environment; score is not a real-game stat prediction.',
       goals: {
-        balanced: { label: 'All-round explorer', weights: {jetpack:4, shield:4, life:3, hazard:2}, defaults: ['jetpack','shield','life','hazard'], tip: 'Spread your supercharged slots between movement and survivability rather than over-investing in a single hazard type.' },
-        mobility: { label: 'Maximum mobility', weights: {jetpack:7, shield:2, life:2, hazard:1}, defaults: ['jetpack','shield','life'], tip: 'Prioritize your strongest movement roll in a supercharged slot; keep the Jetpack family tightly connected.' },
-        survival: { label: 'Extreme survival', weights: {shield:7, hazard:5, life:4, jetpack:1}, defaults: ['shield','hazard','life','jetpack'], tip: 'Concentrate on shields and life support, while matching specialized protection to the worlds you visit.' }
+        balanced: { label: 'All-round explorer', weights: {jetpack:7,shield:6,life:5,hazard:3,heat:2,cold:2,toxic:2,radiation:2,underwater:2,forbidden:4,utility:1,refiner:1,translator:1,story:2,cosmetic:0}, defaults: ['jetpack','shield','life','hazard','heat','cold','toxic','radiation','underwater','utility','refiner','translator','story'], tip: 'Bring full mobility and life-support technology, then specialize your environment modules around destinations. Utility and cosmetic modules should not compete with performance tech for supercharged positions.' },
+        mobility: { label: 'Maximum mobility', weights: {jetpack:9,shield:4,life:4,hazard:2,heat:1,cold:1,toxic:1,radiation:1,underwater:3,forbidden:2,utility:1,refiner:1,translator:1,story:1,cosmetic:0}, defaults: ['jetpack','shield','life','hazard','underwater','utility'], tip: 'Keep your four crafted movement enhancements together with the Jetpack and your best Movement Module rolls. Water Jets and Rocket Boots are separate crafted technologies, not procedural modules.' },
+        survival: { label: 'Extreme survival', weights: {jetpack:3,shield:9,life:7,hazard:6,heat:5,cold:5,toxic:5,radiation:5,underwater:5,forbidden:6,utility:1,refiner:1,translator:1,story:3,cosmetic:0}, defaults: ['jetpack','shield','life','hazard','heat','cold','toxic','radiation','underwater','forbidden','story'], tip: 'Use separate heat, cold, toxic, radiation and underwater protections. Recharged protection modules have different mechanics from general hazard shielding; prioritize actual defensive rolls.' },
+        underwater: { label: 'Oceans & fishing', weights: {underwater:9,life:7,jetpack:6,shield:4,hazard:3,heat:1,cold:1,toxic:1,radiation:1,forbidden:1,utility:3,refiner:2,translator:1,story:1,cosmetic:0}, defaults: ['underwater','life','jetpack','shield','utility','refiner'], tip: 'Use the Aeration Membrane and Pressure Membrane with underwater upgrades, and include Efficient Water Jets from the movement family. The Exo-Skiff is an optional utility, not an underwater protection upgrade.' }
       },
       families: {
-        jetpack: { name: 'Jetpack', short: 'JET', icon: 'jetpack', core: 'Jetpack', upgrade: 'Movement Module', maxUpgrades: 3, color: 'mint', sc: 'upgrade', why: 'Movement upgrades improve boost performance and travel comfort.', next: 'Replace weak movement rolls before chasing tiny adjacency gains.' },
-        shield: { name: 'Personal Shields', short: 'SHD', icon: 'shield', core: 'Exosuit Defence Systems', upgrade: 'Shield Module', maxUpgrades: 3, color: 'blue', sc: 'upgrade', why: 'Stronger shields buy time in Sentinel fights and hostile environments.', next: 'Compare shield capacity rolls on your installed modules.' },
-        life: { name: 'Life Support', short: 'LIF', icon: 'life', core: 'Life Support', upgrade: 'Life Support Module', maxUpgrades: 3, color: 'amber', sc: 'upgrade', why: 'Life support upgrades reduce how often you need to refuel your suit.', next: 'Upgrade your weakest life support module next.' },
-        hazard: { name: 'Hazard Protection', short: 'HAZ', icon: 'hazard', core: 'Hazard Protection', upgrade: 'Hazard Protection Module', maxUpgrades: 3, color: 'violet', sc: 'upgrade', why: 'General hazard support complements dedicated environmental protections.', next: 'Add planet-specific protection technology separately as needed.' }
+        jetpack: { section:'Core systems', name:'Jetpack & Movement', short:'JET', icon:'jetpack', core:'Jetpack', upgrade:'Movement Module', maxUpgrades:3, color:'mint', sc:'upgrade', why:'Jetpack travel, sprint endurance and underwater propulsion are different tech pieces that work alongside up to three Movement Modules.', next:'Compare your three best movement rolls; crafted movement blueprints are additional installs.', addons:[
+          {id:'airburst', name:'Airburst Engine', icon:'airburst', default:true},
+          {id:'rocketboots', name:'Rocket Boots', icon:'boots', default:true},
+          {id:'waterjets', name:'Efficient Water Jets', icon:'water', default:true},
+          {id:'neural', name:'Neural Stimulator', icon:'boost', default:true}
+        ] },
+        shield: { section:'Core systems', name:'Personal Shields', short:'SHD', icon:'shield', core:'Exosuit Defence Systems', upgrade:'Shield Module', maxUpgrades:3, color:'blue', sc:'upgrade', why:'Dedicated shields support combat survivability; procedural Shield Modules have variable rolls.', next:'Compare your three best shield rolls.' },
+        life: { section:'Core systems', name:'Life Support', short:'LIF', icon:'life', core:'Life Support', upgrade:'Life Support Module', maxUpgrades:3, color:'amber', sc:'upgrade', why:'Base life support and crafted oxygen systems are separate from Life Support Modules.', next:'Add Oxygen Recycler and Oxygen Rerouter alongside your best module rolls.', addons:[
+          {id:'recycler', name:'Oxygen Recycler', icon:'oxygen', default:true},
+          {id:'rerouter', name:'Oxygen Rerouter', icon:'reroute', default:true}
+        ] },
+        hazard: { section:'Core systems', name:'General Hazard Protection', short:'HAZ', icon:'hazard', core:'Hazard Protection', maxUpgrades:0, color:'violet', sc:'none', why:'General environmental shielding. A Shield Lattice is a craftable add-on; distinct elemental protection modules are tracked separately below.', next:'Do not confuse the Shield Lattice with separate heat, cold, toxic and radiation modules.', addons:[
+          {id:'lattice', name:'Shield Lattice', icon:'shield', default:true}
+        ] },
+        heat: { section:'Environmental protection', name:'Heat Protection', short:'HOT', icon:'heat', core:'Coolant Network', upgrade:'Thermal Protection Module (Heat)', maxUpgrades:3, color:'rose', sc:'upgrade', why:'Crafted hot-world shielding plus dedicated, rechargeable heat protection modules.', next:'Keep heat-specific rolled modules distinct from cold modules.' },
+        cold: { section:'Environmental protection', name:'Cold Protection', short:'CLD', icon:'cold', core:'Thermic Layer', upgrade:'Thermal Protection Module (Cold)', maxUpgrades:3, color:'blue', sc:'upgrade', why:'Crafted cold-weather insulation and dedicated cold protection modules.', next:'Carry cold protection for frozen and extreme-temperature planets.' },
+        toxic: { section:'Environmental protection', name:'Toxic Protection', short:'TOX', icon:'toxic', core:'Toxin Suppressor', upgrade:'Toxic Protection Module', maxUpgrades:3, color:'mint', sc:'upgrade', why:'Additional shielding for toxic worlds; dedicated modules require replenishing.', next:'Install toxin-specific protection rather than using an unrelated environmental module.' },
+        radiation: { section:'Environmental protection', name:'Radiation Protection', short:'RAD', icon:'radiation', core:'Radiation Deflector', upgrade:'Radiation Protection Module', maxUpgrades:3, color:'amber', sc:'upgrade', why:'Crafted shielding plus dedicated radiation protection modules for irradiated environments.', next:'Compare radiation protection duration rolls, not just class.' },
+        underwater: { section:'Environmental protection', name:'Underwater Protection', short:'SEA', icon:'water', core:'Aeration Membrane', upgrade:'Underwater Protection Module', maxUpgrades:3, color:'blue', sc:'upgrade', why:'Aquatic breathing and pressure protection are independent of heat/cold/toxic/radiation protection.', next:'Add the Pressure Membrane for deep dives and the Jetpack Efficient Water Jets for mobility.', addons:[
+          {id:'pressure', name:'Pressure Membrane', icon:'pressure', default:true}
+        ] },
+        forbidden: { section:'Specialized modules', name:'Sentinel / Forbidden Mods', short:'SNT', icon:'sentinel', upgrade:'Forbidden Exosuit Module', maxUpgrades:3, color:'violet', sc:'upgrade', why:'Forbidden upgrades collected from Sentinel technology can provide their own rolled benefits; verify their actual values.', next:'Use only the modules you actually own; this category is optional.' },
+        utility: { section:'Utility & exploration', name:'Suit Utilities', short:'UTL', icon:'toolkit', maxUpgrades:0, adjacency:'none', color:'amber', sc:'none', why:'Standalone quality-of-life technology. These items do not form a stat-boosting adjacency family.', next:'Choose only the utility technology installed in your suit.', addons:[
+          {id:'hazmat', name:'Haz-Mat Gauntlet', icon:'gauntlet', default:true},
+          {id:'trade', name:'Trade Rocket', icon:'rocket', default:true},
+          {id:'nutrient', name:'Nutrient Ingestor', icon:'food', default:false},
+          {id:'skiff', name:'Exo-Skiff', icon:'skiff', default:false},
+          {id:'exosummon', name:'Exocraft Summoning Unit', icon:'summon', default:true},
+          {id:'archive', name:'Archive Bypass Implant', icon:'archive', default:false},
+          {id:'visceral', name:'Visceral Synthesiser', icon:'hazard', default:false}
+        ] },
+        refiner: { section:'Utility & exploration', name:'Personal Refining', short:'REF', icon:'refiner', maxUpgrades:0, adjacency:'none', color:'mint', sc:'none', why:'Portable refiners are installable suit utilities; the Mk 2 replaces the basic version in this planner.', next:'Choose one refiner, not both.', addons:[
+          {id:'refiner1', name:'Personal Refiner', icon:'refiner', exclusive:'refiner', default:false},
+          {id:'refiner2', name:'Personal Refiner Mk 2', icon:'refiner', exclusive:'refiner', default:true}
+        ] },
+        translator: { section:'Utility & exploration', name:'Language Translators', short:'TRN', icon:'translator', maxUpgrades:0, adjacency:'none', color:'blue', sc:'none', why:'Installable translator technologies provide language comprehension, not procedurally rolled combat stats.', next:'Select the translator blueprints you have unlocked.', addons:[
+          {id:'simple', name:'Simple Translator', icon:'translator', default:false},
+          {id:'superior', name:'Superior Translator', icon:'translator', default:false},
+          {id:'advanced', name:'Advanced Translator', icon:'translator', default:true},
+          {id:'artemis', name:"Artemis' Translator", icon:'translator', default:false}
+        ] },
+        story: { section:'Story & optional', name:'Atlas, Quest & Rare Tech', short:'STR', icon:'atlas', maxUpgrades:0, adjacency:'none', color:'violet', sc:'none', why:'Quest-specific technologies are optional. Star Seed and Remembrance have a documented health adjacency bonus; unrelated utility/story technologies do not.', next:'Do not include technology you have not unlocked or cannot obtain on your save.', addons:[
+          {id:'star', name:'Star Seed', icon:'atlas', exclusive:'atlaspath', default:false},
+          {id:'denier', name:'Mark of the Denier', icon:'atlas', exclusive:'atlaspath', default:false},
+          {id:'remembrance', name:'Remembrance', icon:'life', default:false},
+          {id:'anomaly', name:'Anomaly Suppressor', icon:'anomaly', default:false},
+          {id:'lens', name:'Living Lens', icon:'eye', default:false}
+        ] },
+        cosmetic: { section:'Story & optional', name:'Jetpack Trails (Cosmetic)', short:'TRL', icon:'spark', maxUpgrades:0, adjacency:'none', color:'rose', sc:'none', why:'Optional cosmetic jetpack trail technologies. They should not be prioritized for stat or adjacency gains.', next:'Only select one or more trails if you actually have them installed.', addons:[
+          {id:'antimatter', name:'Antimatter Jetpack Trail', icon:'spark'},
+          {id:'rainbow', name:'Rainbow Jetpack Trail', icon:'spark'},
+          {id:'red', name:'Red Jetpack Trail', icon:'spark'},
+          {id:'green', name:'Green Jetpack Trail', icon:'spark'},
+          {id:'blue', name:'Blue Jetpack Trail', icon:'spark'},
+          {id:'bubbles', name:'Bubble Jetpack Trail', icon:'spark'},
+          {id:'ghastly', name:'Ghastly Trail', icon:'spark'},
+          {id:'reality', name:'Reality Glitch Trail', icon:'spark'},
+          {id:'discordant', name:'Discordant Jetpack Trail', icon:'spark'},
+          {id:'electric', name:'Electric Jetpack Trail', icon:'spark'},
+          {id:'scorching', name:'Scorching Jetpack Trail', icon:'spark'},
+          {id:'festive', name:'Festive Jetpack Trail', icon:'spark'},
+          {id:'pyro', name:'Pyrotechnics Jetpack Trail', icon:'spark'},
+          {id:'plasma', name:'Plasma Jetpack Trail', icon:'spark'},
+          {id:'fusion', name:'Fusion Jetpack Trail', icon:'spark'},
+          {id:'ink', name:'Ink-Stained Trail', icon:'spark'}
+        ] }
       }
     },
     multitool: {

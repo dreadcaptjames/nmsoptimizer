@@ -63,3 +63,21 @@
  .cell .slot-icon, .cell .slot-glyph { width: 23px; height: 23px; }
  .gear-btn { gap: 4px; }
 }
+
+/* V1.2 Exosuit: organized subsystem checklist with individually selectable blueprints. */
+.tech-section-title{font-size:10px;letter-spacing:.15em;color:#8faeae;text-transform:uppercase;margin:16px 0 7px;font-weight:850;border-bottom:1px solid #2c3b4a;padding:0 0 6px}
+.tech-section-title:first-child{margin-top:4px}
+.addon-details{margin:-1px 0 7px 30px;border-left:2px solid #284352;padding-left:10px;font-size:11px}
+.addon-details summary{color:#a9c2cf;cursor:pointer;font-weight:720;line-height:1.5;padding:7px 0;list-style:revert}
+.addon-details summary span{float:right;color:#77a49e;font-variant-numeric:tabular-nums}
+.addon-details[open] summary{color:#d4eee9}
+.addon-list{display:grid;gap:4px;padding:4px 0 12px}
+.addon-row{display:flex;align-items:center;gap:9px;line-height:1.35;color:#bfd3df;cursor:pointer;padding:6px 3px;border-radius:6px}
+.addon-row:hover{background:#183244}
+.addon-row.dimmed{opacity:.45;cursor:not-allowed}
+.addon-row input{accent-color:#7de0c6;flex:none;margin:0}
+.addon-glyph{color:#a2d8cd;width:20px;height:20px;display:inline-grid;place-items:center;flex:none}
+.addon-glyph.blue{color:var(--blue)}.addon-glyph.amber{color:var(--amber)}.addon-glyph.violet{color:var(--violet)}.addon-glyph.rose{color:var(--rose)}
+.addon-glyph .family-glyph{width:18px;height:18px}
+.crafted-list{margin-top:5px;color:#b9dcd2;line-height:1.5}
+.cell.tile .cell-name{word-break:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
