@@ -23,15 +23,21 @@
   }
   function assemble(gear, profile, capacity) {
     const goal = gear.goals[profile.goal];
-    const active = (profile.enabled || []).filter(id => gear.families[id]).sort((a,b) =>
+    const active = (profile.enabled || []).filter(id => gear.families[id] && (!gear.families[id].vehicles || !profile.vehicle || gear.families[id].vehicles.includes(profile.vehicle))).sort((a,b) =>
       (goal.weights[b] || 0) - (goal.weights[a] || 0));
     const selected = new Set(profile.addons || []);
+    const replacements = new Set();
+    for(const id of active){
+      for(const addon of gear.families[id].addons||[]){
+        if(selected.has(id+':'+addon.id) && addon.replacesCore)replacements.add(addon.replacesCore);
+      }
+    }
     const request = [];
     // Place critical cores and one procedural roll before optional technology.
     // The module cap applies only to generated upgrades, never crafted blueprints.
     for (const id of active) {
       const family = gear.families[id];
-      if (family.core) request.push({id:id+':core',family:id,role:'core',sequence:0,label:family.core});
+      if (family.core && !replacements.has(id)) request.push({id:id+':core',family:id,role:'core',sequence:0,label:family.core});
       if (family.maxUpgrades > 0 && profile.depth >= 1)
         request.push({id:id+':1',family:id,role:'upgrade',sequence:1,label:family.upgrade});
     }
@@ -48,11 +54,11 @@
       const family=gear.families[id];
       const chosen=new Set();
       for (const addon of family.addons || []) {
-        if (!selected.has(id+':'+addon.id)) continue;
+        if (!selected.has(id+':'+addon.id) || (addon.vehicles && profile.vehicle && !addon.vehicles.includes(profile.vehicle))) continue;
         if (addon.exclusive && chosen.has(addon.exclusive)) continue;
         if (addon.exclusive) chosen.add(addon.exclusive);
         request.push({id:id+':crafted:'+addon.id,family:id,role:'crafted',sequence:0,
-          addon:addon.id,label:addon.name,icon:addon.icon || family.icon});
+          addon:addon.id,label:addon.name,icon:addon.icon || family.icon,noAdjacency:!!addon.noAdjacency});
       }
     }
     return {tiles:request.slice(0,capacity),skipped:request.slice(capacity),requested:request.length};
@@ -82,7 +88,7 @@
       const right = p % cols < cols - 1 ? tiles[map[p+1]] : null;
       const down = p + cols < map.length ? tiles[map[p+cols]] : null;
       [right,down].forEach(other => {
-        if (other && other.family === t.family) {
+        if (other && other.family === t.family && !other.noAdjacency && !t.noAdjacency) {
           const isStoryPair = t.family === 'story' &&
             ((t.addon === 'star' && other.addon === 'remembrance') ||
              (t.addon === 'remembrance' && other.addon === 'star'));
@@ -101,6 +107,8 @@
     // Small compactness preference reduces fragmented same-family islands.
     Object.entries(groups).forEach(([id,positions]) => {
       if (positions.length < 2 || gear.families[id].adjacency === 'none') return;
+      positions = positions.filter(pos => !tiles[map[pos]].noAdjacency);
+      if(positions.length<2)return;
       const meanX = positions.reduce((s,p)=>s+(p%cols),0)/positions.length;
       const meanY = positions.reduce((s,p)=>s+Math.floor(p/cols),0)/positions.length;
       let spread = 0;
@@ -121,7 +129,7 @@
     const tiles = assembled.tiles;
     if (tiles.length === 0) throw new Error('Enable at least one technology family before optimizing.');
     let bestMap = null, bestStats = null;
-    const seed = stableSeed(JSON.stringify([profile.goal,profile.enabled,profile.depth,profile.cols,profile.rows,sc,profile.blocked]));
+    const seed = stableSeed(JSON.stringify([profile.goal,profile.vehicle,profile.enabled,profile.addons,profile.depth,profile.cols,profile.rows,sc,profile.blocked]));
     const loops = Math.min(5600,Math.max(2200,available.length*90));
     for (let run=0;run<7;run++) {
       const rnd = randomGenerator(seed + run*10007);

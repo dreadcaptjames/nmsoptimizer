@@ -7,7 +7,7 @@ const STORAGE='atlas-max-v1';
 const gearKeys=Object.keys(DATA.gear);
 const app=document.getElementById('app');
 let editing='move',selectedCell=null,activeTile=null,toastTimer=null;
-const expandedAddons=new Set(['jetpack','life','hazard','underwater']);
+const expandedAddons=new Set(['jetpack','life','hazard','underwater','mining','hyperdrive','freighterWarp','launch','mechLaser']);
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp=(n,min,max)=>Math.min(max,Math.max(min,Number(n)||min));
 const uniqueValid=(xs,size)=>[...new Set((Array.isArray(xs)?xs:[]).filter(x=>Number.isInteger(x)&&x>=0&&x<size))];
@@ -17,13 +17,16 @@ function demoSC(key,cls,cols=8,rows=5){
   const positions=(templates[key]||[]).filter(p=>p<cols*rows);
   return positions.slice(0,wantedSC(key,cls));
 }
-function defaultAddons(gear){
-  return Object.entries(gear.families).flatMap(([id,f])=>(f.addons||[]).filter(a=>a.default).map(a=>id+':'+a.id));
+function canUse(f,vehicle){return !f.vehicles || !vehicle || f.vehicles.includes(vehicle);}
+function availableFamilies(gear,vehicle){return Object.entries(gear.families).filter(([id,f])=>canUse(f,vehicle));}
+function goalDefaults(gear,goal,vehicle){const g=gear.goals[goal];return (g.defaultsByVehicle?.[vehicle] || g.defaults).filter(id=>gear.families[id]&&canUse(gear.families[id],vehicle));}
+function defaultAddons(gear,vehicle){
+  return availableFamilies(gear,vehicle).flatMap(([id,f])=>(f.addons||[]).filter(a=>a.default&&canUse(a,vehicle)).map(a=>id+':'+a.id));
 }
-function validAddons(gear,raw){
+function validAddons(gear,raw,vehicle){
   const request=new Set(Array.isArray(raw)?raw:[]),out=[],exclusive=new Set();
-  for(const [id,f] of Object.entries(gear.families))for(const addon of f.addons||[]){
-    if(!request.has(id+':'+addon.id))continue;
+  for(const [id,f] of availableFamilies(gear,vehicle))for(const addon of f.addons||[]){
+    if(!request.has(id+':'+addon.id)||!canUse(addon,vehicle))continue;
     const group=addon.exclusive?id+':'+addon.exclusive:null;
     if(group&&exclusive.has(group))continue;
     if(group)exclusive.add(group);
@@ -32,9 +35,9 @@ function validAddons(gear,raw){
   return out;
 }
 function defaultProfile(key){
-  const gear=DATA.gear[key],goal=Object.keys(gear.goals)[0],cls='S';
+  const gear=DATA.gear[key],goal=Object.keys(gear.goals)[0],cls='S',vehicle=gear.vehicleOptions?Object.keys(gear.vehicleOptions)[0]:null;
   const cols=key==='exosuit'?10:8,rows=key==='exosuit'?6:5;
-  return {name:'',cls,goal,cols,rows,sc:demoSC(key,cls,cols,rows),blocked:[],scExample:true,enabled:[...gear.goals[goal].defaults],addons:defaultAddons(gear),depth:3,target:'S',layout:null,dirty:false};
+  return {name:'',cls,goal,vehicle,cols,rows,sc:demoSC(key,cls,cols,rows),blocked:[],scExample:true,enabled:goalDefaults(gear,goal,vehicle),addons:defaultAddons(gear,vehicle),catalogVersion:2,depth:3,target:'S',layout:null,dirty:false,...(vehicle?{savedVehicles:{}}:{})};
 }
 function initialState(){return {version:1,current:'starship',equipment:Object.fromEntries(gearKeys.map(k=>[k,defaultProfile(k)]))};}
 function normalizeProfile(key,raw){
@@ -42,6 +45,7 @@ function normalizeProfile(key,raw){
   if(!raw||typeof raw!=='object')return base;
   const p={...base};
   p.name=String(raw.name||'').slice(0,80);
+  p.vehicle=gear.vehicleOptions?.[raw.vehicle]?raw.vehicle:base.vehicle;
   p.cls=['C','B','A','S'].includes(raw.cls)?raw.cls:'S';
   p.goal=gear.goals[raw.goal]?raw.goal:base.goal;
   p.cols=clamp(raw.cols,6,10);p.rows=clamp(raw.rows,3,6);
@@ -50,10 +54,17 @@ function normalizeProfile(key,raw){
   p.blocked=uniqueValid(raw.blocked,p.cols*p.rows);
   p.sc=p.sc.filter(pos=>!p.blocked.includes(pos));
   p.depth=clamp(raw.depth,1,3);p.target=raw.target==='X'?'X':'S';
-  p.enabled=[...new Set((Array.isArray(raw.enabled)?raw.enabled:base.enabled).filter(id=>gear.families[id]))];
-  p.addons=validAddons(gear,Array.isArray(raw.addons)?raw.addons:base.addons);
+  p.enabled=[...new Set((Array.isArray(raw.enabled)?raw.enabled:base.enabled).filter(id=>gear.families[id]&&canUse(gear.families[id],p.vehicle)))];
+  p.addons=validAddons(gear,Array.isArray(raw.addons)?raw.addons:base.addons,p.vehicle);
   // Upgrade old four-family Exosuit saves without deleting their existing layout.
   const migrating=key==='exosuit'&&!Array.isArray(raw.addons);
+  // Existing v1 profiles predate these expanded catalogs. Preserve their hand-built
+  // grid, offer the newly recommended systems, and require a manual re-optimization.
+  const migratingCatalog=key!=='exosuit'&&Number(raw.catalogVersion||0)<2;
+  if(migratingCatalog){
+    p.enabled=[...new Set([...p.enabled,...goalDefaults(gear,p.goal,p.vehicle)])];
+    p.addons=validAddons(gear,[...p.addons,...defaultAddons(gear,p.vehicle)],p.vehicle);
+  }
   if(migrating){
     const old=new Set(['jetpack','shield','life','hazard']);
     p.enabled=[...new Set([...p.enabled,...gear.goals[p.goal].defaults.filter(id=>!old.has(id))])];
@@ -67,10 +78,11 @@ function normalizeProfile(key,raw){
     // Reconstitute only known family identifiers and safe, known technology labels.
     const tiles=raw.layout.tiles.map(t=>{
       const fam=gear.families[t.family];
+      if(!canUse(fam,p.vehicle))return null;
       if(t.role==='crafted'){
-        const addon=(fam.addons||[]).find(a=>a.id===t.addon);
+        const addon=(fam.addons||[]).find(a=>a.id===t.addon&&canUse(a,p.vehicle));
         return addon?{id:t.family+':crafted:'+addon.id,family:t.family,role:'crafted',sequence:0,
-          addon:addon.id,label:addon.name,icon:addon.icon||fam.icon}:null;
+          addon:addon.id,label:addon.name,icon:addon.icon||fam.icon,noAdjacency:!!addon.noAdjacency}:null;
       }
       return {id:t.family+':'+(t.role==='core'?'core':t.sequence),family:t.family,role:t.role,
         sequence:t.sequence,label:t.role==='core'?fam.core:fam.upgrade};
@@ -86,7 +98,21 @@ function normalizeProfile(key,raw){
     if(valid){
       const planned=SOLVER.assemble(gear,p,p.cols*p.rows-p.blocked.length);
       p.layout={tiles,map:raw.layout.map.slice(),skipped:planned.skipped,requested:planned.requested};
-      if(migrating)p.dirty=true;
+      if(migrating||migratingCatalog)p.dirty=true;
+    }
+  }
+  if(key==='exocraft'){
+    p.savedVehicles={};
+    if(raw.savedVehicles && typeof raw.savedVehicles==='object'){
+      for(const vehicle of Object.keys(gear.vehicleOptions)){
+        if(vehicle===p.vehicle)continue;
+        const old=raw.savedVehicles[vehicle];
+        if(old && typeof old==='object'){
+          const snapshot=normalizeProfile(key,{...old,vehicle,savedVehicles:null});
+          delete snapshot.savedVehicles;
+          p.savedVehicles[vehicle]=snapshot;
+        }
+      }
     }
   }
   return p;
@@ -101,20 +127,20 @@ let state=loadState();
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){}}
 function context(){const key=state.current;return{key,gear:DATA.gear[key],profile:state.equipment[key]};}
 function noteChange(){const{profile}=context();profile.dirty=!!profile.layout;save();}
-function familyPriority(gear,profile){return profile.enabled.filter(id=>gear.families[id]).sort((a,b)=>(gear.goals[profile.goal].weights[b]||1)-(gear.goals[profile.goal].weights[a]||1));}
+function familyPriority(gear,profile){return profile.enabled.filter(id=>gear.families[id]&&canUse(gear.families[id],profile.vehicle)).sort((a,b)=>(gear.goals[profile.goal].weights[b]||1)-(gear.goals[profile.goal].weights[a]||1));}
 function currentStats(gear,profile){return profile.layout?SOLVER.summarize(profile.layout,gear,profile):null;}
 function status(profile){return !profile.layout?'Not generated':profile.dirty?'Review changes':'Optimized layout';}
 function selectorOptions(values,current,formatter){return values.map(v=>`<option value="${esc(v)}" ${v===current?'selected':''}>${esc(formatter?formatter(v):v)}</option>`).join('');}
 function renderTechnologyChoices(gear,profile,goal){
   let section='';const parts=[];
-  for(const [id,f] of Object.entries(gear.families)){
+  for(const [id,f] of availableFamilies(gear,profile.vehicle)){
     if((f.section||'Technology')!==section){
       section=f.section||'Technology';parts.push(`<h4 class="tech-section-title">${esc(section)}</h4>`);
     }
-    const picked=(f.addons||[]).filter(a=>profile.addons.includes(id+':'+a.id));
+    const picked=(f.addons||[]).filter(a=>canUse(a,profile.vehicle)&&profile.addons.includes(id+':'+a.id));
     const summary=f.core?`Base + ${Math.min(profile.depth,f.maxUpgrades||0)} rolled`:
       f.maxUpgrades?`${Math.min(profile.depth,f.maxUpgrades)} rolled modules`:'Individual blueprints';
-    const addons=f.addons||[];
+    const addons=(f.addons||[]).filter(a=>canUse(a,profile.vehicle));
     parts.push(`<div class="family-row"><input type="checkbox" id="fam-${id}" data-family="${id}" ${profile.enabled.includes(id)?'checked':''}><label for="fam-${id}"><span class="fam-topline"><span class="family-icon ${esc(f.color)}">${ICONS.render(f.icon,'family-glyph')}</span><span class="fam-title">${esc(f.name)} <span class="prio">${'◆'.repeat(Math.min(3,Math.ceil((goal.weights[id]||0)/2.5)))}</span></span></span><span class="fam-sub">${esc(summary)}${addons.length?` · ${picked.length}/${addons.length} extras`:''}</span></label></div>`);
     if(addons.length){
       parts.push(`<details class="addon-details" data-addon-group="${id}" ${expandedAddons.has(id)?'open':''}>
@@ -147,6 +173,7 @@ function render(){
         <div class="form-row"><label for="gear-name" class="label">Loadout name</label><input id="gear-name" class="control" maxlength="80" placeholder="${esc(gear.placeholder)}" value="${esc(profile.name)}"></div>
         <div class="controls-2"><div class="form-row"><label for="gear-class" class="label">Class</label><select id="gear-class" class="control" ${gear.fixedSC?'disabled title="Exosuit / Exocraft supercharged slots do not scale by class"':''}>${selectorOptions(['C','B','A','S'],profile.cls,v=>v+' class')}</select></div>
         <div class="form-row"><label for="gear-target" class="label">Upgrade target</label><select id="gear-target" class="control">${selectorOptions(['S','X'],profile.target,v=>v+' class')}</select></div></div>
+        ${gear.vehicleOptions?`<div class="form-row"><label for="vehicle" class="label">Exocraft model</label><select id="vehicle" class="control">${Object.entries(gear.vehicleOptions).map(([id,name])=>`<option value="${id}" ${profile.vehicle===id?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="tiny">Builds are saved independently for each vehicle. New vehicles start with compatible technology.</p></div>`:''}
         <div class="form-row"><label for="goal" class="label">Optimization focus</label><select id="goal" class="control">${Object.entries(gear.goals).map(([id,g])=>`<option value="${id}" ${id===profile.goal?'selected':''}>${esc(g.label)}</option>`).join('')}</select></div>
         <div class="form-row"><label class="label">Procedural modules per family</label><div class="segmented" role="group" aria-label="Module cap">${[1,2,3].map(i=>`<button data-action="depth" data-depth="${i}" class="${i===profile.depth?'current':''}" aria-pressed="${i===profile.depth}">${i}</button>`).join('')}</div><p class="tiny">Crafted blueprint technology does not consume these module slots.</p></div>
       </div>
@@ -164,7 +191,7 @@ function render(){
         <div class="panel metric"><div class="metric-name">LAYOUT SCORE</div><div class="metric-value">${stats?Math.round(stats.score):'—'}</div><div class="metric-sub">Relative planning metric</div></div>
       </div>
       <section class="panel planner" aria-labelledby="grid-heading">
-        <div class="planner-head"><div><div class="planner-title"><h2 id="grid-heading">${esc(profile.name.trim()||gear.name)} technology grid</h2><span class="${profile.layout&&!profile.dirty?'ready':'pending'}">${esc(status(profile))}</span></div><p class="helper">${esc(gear.subtitle)} · Select slot locations to match your in-game inventory.</p></div>
+        <div class="planner-head"><div><div class="planner-title"><h2 id="grid-heading">${esc(profile.name.trim()||gear.name)} technology grid</h2><span class="${profile.layout&&!profile.dirty?'ready':'pending'}">${esc(status(profile))}</span></div><p class="helper">${esc(gear.subtitle)}${gear.vehicleOptions?' · '+esc(gear.vehicleOptions[profile.vehicle]):''} · Select slot locations to match your in-game inventory.</p></div>
           <div class="planner-settings"><label class="sr-only" for="grid-cols">Columns</label><select id="grid-cols" class="small-select">${selectorOptions([6,7,8,9,10],profile.cols,n=>n+' columns')}</select><label class="sr-only" for="grid-rows">Rows</label><select id="grid-rows" class="small-select">${selectorOptions([3,4,5,6],profile.rows,n=>n+' rows')}</select></div>
         </div>
         <div class="modes" role="group" aria-label="Technology grid editing modes">
@@ -223,8 +250,9 @@ function renderBriefing(gear,profile,sorted,stats){
 }
 function renderFamilyCard(id,gear,profile,i){
   const fam=gear.families[id];const count=Math.min(profile.depth,fam.maxUpgrades||0);
-  const addons=(fam.addons||[]).filter(a=>profile.addons.includes(id+':'+a.id));
-  return `<div class="family-card"><div class="family-head"><strong class="family-heading"><span class="family-icon ${esc(fam.color)}">${ICONS.render(fam.icon,'family-glyph')}</span><span>${esc(fam.name)}</span></strong><span class="tag">PRIORITY ${i+1}</span></div><div class="family-desc">${esc(fam.why)}</div><div class="family-components">${fam.core?`<b>Core:</b> ${esc(fam.core)}`:'<b>Selectable technology</b>'}${count?` · <b>${count} ×</b> ${esc(fam.upgrade)}`:''}${addons.length?`<div class="crafted-list"><b>Crafted:</b> ${addons.map(a=>esc(a.name)).join(' · ')}</div>`:''}</div></div>`;
+  const addons=(fam.addons||[]).filter(a=>canUse(a,profile.vehicle)&&profile.addons.includes(id+':'+a.id));
+  const replacement=Object.entries(gear.families).flatMap(([fId,owner])=>(owner.addons||[]).filter(a=>a.replacesCore===id&&profile.enabled.includes(fId)&&profile.addons.includes(fId+':'+a.id)));
+  return `<div class="family-card"><div class="family-head"><strong class="family-heading"><span class="family-icon ${esc(fam.color)}">${ICONS.render(fam.icon,'family-glyph')}</span><span>${esc(fam.name)}</span></strong><span class="tag">PRIORITY ${i+1}</span></div><div class="family-desc">${esc(fam.why)}</div><div class="family-components">${fam.core?`<b>Core:</b> ${esc(replacement.length?replacement[0].name+' (replaces '+fam.core+')':fam.core)}`:'<b>Selectable technology</b>'}${count?` · <b>${count} ×</b> ${esc(fam.upgrade)}`:''}${addons.length?`<div class="crafted-list"><b>Crafted:</b> ${addons.map(a=>esc(a.name)).join(' · ')}</div>`:''}</div></div>`;
 }
 function toast(message,error=false){
   const old=document.querySelector('.toast');if(old)old.remove();if(toastTimer)clearTimeout(toastTimer);
@@ -262,7 +290,7 @@ function handleCell(pos){
   save();render();
 }
 function updateGoal(value){const {gear,profile}=context();if(!gear.goals[value])return;
-  profile.goal=value;profile.enabled=[...gear.goals[value].defaults];profile.dirty=!!profile.layout;save();render();
+  profile.goal=value;profile.enabled=goalDefaults(gear,value,profile.vehicle);profile.dirty=!!profile.layout;save();render();
 }
 function optimize(){const {gear,profile}=context();
   if(profile.scExample)toast('Using example SC locations. For a real optimization, mark your actual in-game slots.');
@@ -337,6 +365,25 @@ app.addEventListener('change',event=>{
     if(profile.scExample)profile.sc=demoSC(key,profile.cls,profile.cols,profile.rows);
     layoutChanged(profile);return;}
   if(t.id==='gear-target'){profile.target=t.value==='X'?'X':'S';layoutChanged(profile);return;}
+  if(t.id==='vehicle'&&gear.vehicleOptions?.[t.value]){
+    if(profile.vehicle===t.value)return;
+    const savedVehicles=profile.savedVehicles||{};
+    const {savedVehicles:unused,...snapshot}=profile;
+    savedVehicles[profile.vehicle]=snapshot;
+    let next;
+    if(savedVehicles[t.value]){
+      next=normalizeProfile(key,{...savedVehicles[t.value],vehicle:t.value,savedVehicles:null});
+    }else{
+      next=defaultProfile(key);
+      next.vehicle=t.value;
+      next.enabled=goalDefaults(gear,next.goal,next.vehicle);
+      next.addons=defaultAddons(gear,next.vehicle);
+    }
+    next.savedVehicles=savedVehicles;
+    state.equipment[key]=next;
+    activeTile=null;selectedCell=null;editing='move';save();render();
+    toast(`${gear.vehicleOptions[t.value]} selected. ${next.layout?'Previous layout restored.':'Select Optimize to plan this vehicle.'}`);return;
+  }
   if(t.id==='goal'){updateGoal(t.value);return;}
   if(t.id==='grid-cols'||t.id==='grid-rows'){
     const oldCols=profile.cols,oldRows=profile.rows;

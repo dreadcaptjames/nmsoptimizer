@@ -57,6 +57,12 @@ const shapes=Object.freeze({
   atlas: '<path d="M12 2 22 12 12 22 2 12z"/><path d="M12 6l5 6-5 6-5-6z"/><path d="M2 12h5m10 0h5"/>',
   anomaly: '<circle cx="12" cy="12" r="9"/><path d="M7 6c4 1 6 3 3 6s0 5 6 6M14 5c-1 2-1 4 2 6m-11 4 4-1"/>',
   eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="1"/>',
+  boltcaster: '<path d="M3 9h11l3-3h4v12h-4l-3-3H3zM8 9v6M12 9v6"/><path d="m1 8 2-2m-2 6H0m22-2h2m-2 4 2 2"/>',
+  beam: '<path d="M2 12h7m6 0h7M9 7l6 5-6 5M12 3v3m0 12v3"/><circle cx="12" cy="12" r="7"/>',
+  grav: '<circle cx="12" cy="12" r="3"/><path d="M4 6a11 11 0 0 0 16 12M20 6A11 11 0 0 0 4 18"/><path d="M2 5h5V2m15 17h-5v3M11 1l2 3m0 16-2 3"/>',
+  suspension: '<path d="M4 7h16M4 17h16M7 4v6m10 4v6M8 12l2-3 4 6 2-3"/><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>',
+  flame: '<path d="M12 2c3 5-1 7 2 11 2-2 2-4 2-6 6 6 5 13-1 15-7 2-12-3-10-10 1-2 2-3 3-4 0 4 2 5 4 6-2-5-1-8 0-12z"/>',
+  sonar: '<path d="M4 20c0-9 7-16 16-16M4 15c0-6 5-11 11-11M4 10c0-3 3-6 6-6"/><circle cx="5" cy="19" r="3"/><path d="m15 14 6 7m0-7-6 7"/>',
   module: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9zM9 1v3m6-3v3M9 20v3m6-3v3M1 9h3m-3 6h3m16-6h3m-3 6h3"/>'
 });
 function render(name,className='tech-icon'){

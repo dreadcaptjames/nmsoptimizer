@@ -1,69 +1,76 @@
-# ATLAS MAX — No Man's Sky Equipment Optimizer
+# ATLAS MAX — Full Equipment Catalog (October 2026)
 
-A standalone fan-created web app that helps players design technology inventory layouts for **No Man's Sky**. No accounts, game-save access, API keys, dependencies, paid services, external fonts, or build tooling are needed.
+ATLAS MAX is an unofficial, self-contained **No Man’s Sky equipment-layout planner**. This release upgrades the four smaller catalogs to the same named-technology, crafted-blueprint and rolled-module model already used for the Exosuit.
 
-## Quick start
+There is **no npm install, internet connection, account, API key, or build step**. The browser saves profiles locally. A copy of the game or a save-file connection is not required to explore the planner.
 
-Extract the ZIP and open `index.html` in a browser, or upload the files to any static web host.
+## Install / update
 
-## GitHub Pages deployment
+1. Extract the complete ZIP.
+2. Open `index.html` in a browser, or upload **all files** to the root of your GitHub Pages repository (including the new `catalog-expanded.js`).
+3. If using GitHub Pages, open **Settings → Pages**, set **Deploy from a branch** and select `main` / `/(root)`.
+4. Existing profiles in the same browser's local storage are loaded and retained, with newly added default systems made available where appropriate. Imported/exported JSON loadouts are supported.
 
-1. Upload **the files inside the extracted folder**, including `index.html`, `styles.css`, `data.js`, `optimizer.js`, `icons.js`, `app.js` and `favicon.svg`, to the root of a GitHub repository.
-2. Open the repository's **Settings → Pages**.
-3. Choose **Deploy from a branch**, select `main` and `/(root)`, then save.
-4. Use the Pages address GitHub displays after publishing.
+**Important:** Do not upload only `index.html` or omit `catalog-expanded.js`. It is the additional, required data catalog that expands the other equipment types. You can replace all files from this ZIP over the previous website files.
 
-This app also works on Cloudflare Pages, Netlify, Vercel or any static HTTP server.
+## Expanded equipment sections
 
-## What's new: expanded Exosuit (October 2026)
+### Multi-tool
 
-The Exosuit now has **15 technology groups and 42 individually selectable crafted technologies**, plus separate procedural-module slots. Its catalog is grouped into:
+Individual tech for **Scanner**, **Analysis Visor**, **Survey Device**, **Waveform Recycler**, **Autophage detectors**, **Mining Beam**, **Optical Drill**, **Advanced Mining Laser**, **Plasma Resonator**, **Terrain Manipulator**, **Boltcaster**, **Neutron Cannon**, **Pulse Spitter**, **Scatter Blaster**, **Blaze Javelin**, **Paralysis Mortar**, **Voltaic Amplifier**, **Plasma Launcher**, **Geology Cannon**, **Cloaking Device**, **Personal Forcefield**, **Combat Scope**, **Gravitino Coil** (Remnant, 2026), and optional special Sentinel upgrades. The five primary weapon families have their own crafted support parts and module slots.
 
-- **Core systems**: Jetpack, Movement Modules, Airburst Engine, Rocket Boots, Efficient Water Jets, Neural Stimulator; Exosuit shields; Life Support, Oxygen Recycler and Oxygen Rerouter; Hazard Protection and Shield Lattice.
-- **Environmental protection**: Separate heat, cold, toxic, radiation and underwater systems. Includes Coolant Network, Thermic Layer, Toxin Suppressor, Radiation Deflector, Aeration Membrane and Pressure Membrane, plus each environment's own procedural protection modules.
-- **Specialized upgrades**: Forbidden Exosuit Modules (Sentinel-related, optional).
-- **Utilities & exploration**: Haz-Mat Gauntlet, Trade Rocket, Nutrient Ingestor, Exo-Skiff, Exocraft Summoning Unit, Archive Bypass Implant, Visceral Synthesiser, Personal Refiner, Personal Refiner Mk 2, Simple/Superior/Advanced/Artemis' Translators.
-- **Story / rare tech**: Star Seed, Mark of the Denier, Remembrance, Anomaly Suppressor and Living Lens.
-- **Cosmetics**: Sixteen optional Jetpack trail technologies.
+### Starship
 
-The app distinguishes an equipment family's **base technology (CORE)**, **procedurally rolled upgrades (U1–U3)** and **individual named blueprint tech (TECH)**. Blueprint items don't consume the three-module procedural limit. Compatible technology is clustered; unrelated utility and cosmetic items are not awarded imaginary synergy. Star Seed and Remembrance receive a specific, documented adjacency preference if both are included.
+Separate weapon families for **Photon Cannon**, **Phase Beam**, **Positron Ejector**, **Infra-Knife**, **Cyclotron Ballista**, and **Rocket Launcher**. Flight systems have named blueprints including **Launch Auto-Charger**, **Efficient Thrusters**, **Aqua Jets**, **Sub-Light Amplifier**, **Flight Assist Override**, **Photonix Core**, and **Ablative Armour**. Hyperdrive color progression includes **Cadmium**, **Emeril**, **Indium**, and **Atlantid Drive** (purple systems). Utility options include **Economy Scanner**, **Conflict Scanner**, **Teleport Receiver**, **Cargo Scan Deflector**, and **Emergency Warp Unit**.
 
-Personal Refiner and Personal Refiner Mk 2 are mutually exclusive in the normal loadout planner, as are Star Seed and Mark of the Denier. The app doesn't attempt to model installation exploits or save-editor configurations.
+**Sentinel Interceptor cores** are also available as optional special technology: **Anti-Gravity Well**, **Luminance Engine**, **Crimson Core**, **Aeron Shield**, **Sentinel Cannon**, and **Pilot Interface**. The optimizer will *not* place the ordinary core technology if you also select the Sentinel replacement for that core system; it retains the regular procedural module slots. It does not invent a cross-family adjacency modifier. **Vesper Sail** is marked as Solar-only. This app does not yet model Living Ship organic technology or Corvette construction; they follow different rules from normal technology grids.
 
-Players can choose one of four Exosuit goals: balanced exploration, mobility, extreme survival, or oceans/fishing. Exosuit profiles default to a 10×6 planner grid; the actual unlocked inventory and supercharged positions still must be matched in-game. **Existing local profiles are preserved**, and older Exosuit configurations are offered the newly introduced categories on reload. No optimization ever runs automatically.
+### Freighter
 
-## Core features
+**Freighter Hyperdrive** plus rolled modules and independently selectable **Warp Core Resonator**, **Plasmatic Warp Injector**, **Reality De-threader**, **Amplified Warp Shielding**, **Chromatic Warp Shielding**, **Temporal Warp Computer**, and **Resonance Matrix**. Expedition types are distinct: **Combat & Defence**, **Exploration & Scientific**, **Trade**, **Industrial & Mining**, **Fuel Efficiency**, and **Expedition Speed**. Utilities include **Matter Beam**, **Interstellar Scanner**, and special/quest technology including **Singularity Engine**. Optional **freighter trails** are treated as cosmetic, without invented stat adjacency. *Fleet Command Rooms are base construction and are deliberately not included as installable grid technology.*
 
-- Five equipment categories: Exosuit, Multi-tool, Starship, Freighter and Exocraft.
-- Per-equipment loadout goals, technology checkboxes, crafted-blueprint choices, and procedural-module depth.
-- Editable locked/unlocked slots, supercharged positions, and technology grid dimensions.
-- Explicit **Optimize layout** button; never generates automatically on load or when selecting settings.
-- A placement solver favoring compatible cardinal adjacency and higher-priority supercharged modules, with manual tile swaps.
-- Browser-local saved profiles, JSON import/export, copyable text build and personalized equipment names.
-- Offline SVG icons for every equipment group and its technology components, including individual crafted blueprint icons.
+### Exocraft (now six independent profiles)
 
-## Important limits
+Use the **Exocraft model** selector to choose one vehicle. Each vehicle has independent grid dimensions, supercharged positions, optional technologies, saved loadout, and optimization result. Switching back restores the earlier model's build; nothing regenerates automatically.
 
-**ATLAS MAX is a planning tool**, not an exact game-stat calculator. Its layout score is a heuristic: it does **not** claim to calculate real DPS, jetpack capacity, shielding, environmental survival duration, scanning reward, or hidden synergy percentage. The values of individual procedural module rolls are not imported. Upgrade numbering (U1, U2, U3) is just a planning placeholder, with U1 reserved for the player's strongest roll.
+- **Roamer, Nomad, Pilgrim, Colossus:** Fusion Engine, Boost, Suspension, Exocraft Radar, dedicated mining and mounted weapons, hazard defenses, optional tools. **Mineral Processing Rig** is shown only for **Colossus**.
+- **Minotaur:** Daedalus Engine, jumpjets, dedicated Minotaur Laser and Cannon, Flamethrower, Minotaur Radar Array, AI Pilot, optional Sentinel Hardframe equipment.
+- **Nautilon:** Humboldt Drive, Osmotic Generator, Tethys Beam, Dredging Laser, Nautilon Cannon, High-Power Sonar, and their applicable rolled modules.
 
-The model awards adjacency only within known conceptual technology groups and for the explicitly verified Star Seed / Remembrance pair. In-game bonuses can be more nuanced than this model. Players should verify the arrangement, in-game outlines, exact stats and module limits before applying a build. Story and rare tech may not be available to every save.
+The catalog suppresses technologies from other vehicle types. **Icarus Fuel System** is treated as crafted technology, and is not awarded an adjacency bonus where its implementation does not provide one.
 
-Default supercharged positions are **examples**, not reliable coordinates for your inventory. Select **Clear SC**, then mark the actual locations you see in-game.
+### Exosuit
 
-Other equipment categories still have intentionally smaller catalogs; this release's completeness expansion focuses on the Exosuit.
+The existing 15-category expanded Exosuit remains intact, including environmental protection by hazard type, jetpack enhancements, oxygen, underwater equipment, rare upgrades, story technologies and utilities.
 
-## Sources and maintenance
+## Optimization rules / limitations
 
-The app's displayed patch reference was **Cosmos 7.06** when this version was prepared (October 9, 2026). Review the [Hello Games release log](https://www.nomanssky.com/release-log/) for changes to technology and slots.
+- Select equipment, choose a goal, check technology groups and individual blueprints, and mark your real supercharged positions.
+- **Only clicking Optimize layout generates a build**; changing the focus or other settings marks previous output for review, rather than silently rerolling a layout.
+- Base technology is **CORE**, procedural upgrades are **U1 / U2 / U3**, and crafted, named items are **TECH**.
+- Procedural upgrades are capped at three per family; crafted upgrades do **not** consume those slots.
+- Known incompatibilities are handled conservatively, including ordinary vs. Sentinel Interceptor core replacements and mutually exclusive refiners in the Exosuit.
+- The heuristic prioritizes same-family orthogonal adjacency and goals / supercharged slots. It is **not** a prediction of real-game DPS, warp range, shield strength or randomized module rolls.
+- The app has no access to actual No Man's Sky save-file data. Its example supercharged locations are **illustrative**, not your inventory. Select **Clear SC** and mark your actual locations.
+- Some technologies are obtained from expeditions, missions, special ships or later progression. Select only blueprints appropriate for your save and ship.
+- A vehicle, ship or freighter may have fewer installed/unlocked positions than the default planner grid. Match the real dimensions and lock unusable slots.
 
-Catalog cross-checks: [NMS Resources Exosuit Blueprints](https://www.nomansskyresources.com/exosuit-blueprints), [No Man's Sky Exosuit technology overview](https://nomanssky.fandom.com/wiki/Exosuit), [NMS Resources Remembrance](https://www.nomansskyresources.com/exosuit-blueprints/remembrance), [Hello Games Aquarius update](https://www.nomanssky.com/2024/09/aquarius-update/), and [Worlds Part II update](https://www.nomanssky.com/worlds-part-ii-update/).
+## Project files
 
-To edit catalog entries, use `data.js`; the scorer is `optimizer.js`, controls and persistence are `app.js`, SVG artwork is in `icons.js` and appearance is in `styles.css`. The icons are original generic representations and are not copies of proprietary No Man's Sky artwork.
+- `index.html` — page shell / load order (includes `catalog-expanded.js`)
+- `data.js` — original database with fully expanded Exosuit and default game reference links
+- `catalog-expanded.js` — expanded Multi-tool, Starship, Freighter and Exocraft databases
+- `icons.js` — offline SVG component icon designs
+- `optimizer.js` — placement scoring, capacity handling, crafted-component assembly
+- `app.js` — UI, profile migration, per-model Exocraft saves, JSON import/export
+- `styles.css` — responsive styling
+- `favicon.svg` — site identity
+- `tests/` — Node.js regression tests
 
-## Tests
+Run the checks with `node --test tests/*.cjs` (no dependencies). The packaged release passed all **23** automated tests. A local browser screenshot check did not complete in the environment, so automated testing is not a claim of full visual/browser compatibility.
 
-Run `node --test tests/*.cjs` with Node.js. Nothing needs to be installed with npm.
+## Sources and references
 
-## Disclaimer
+Use the [official Hello Games release log](https://www.nomanssky.com/release-log/) to confirm patch changes. Cross-checked named technologies against [Multi-tool Blueprints](https://www.nomansskyresources.com/multi-tool-blueprints), [Starship Blueprints](https://www.nomansskyresources.com/starship-blueprints), [Freighter Blueprints](https://www.nomansskyresources.com/freighter-blueprints), [Exocraft Blueprints](https://www.nomansskyresources.com/exocraft-blueprints), the [Remnant update](https://www.nomanssky.com/2026/02/no-mans-sky-remnant/), and the [Interceptor update](https://www.nomanssky.com/interceptor-update/).
 
-Unofficial fan project. Not affiliated with or endorsed by Hello Games. All trademarks belong to their respective owners.
+**Unofficial fan work.** Not affiliated with or endorsed by Hello Games. Names are used to describe in-game systems, and artwork is original generic vector illustration.
