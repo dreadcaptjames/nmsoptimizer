@@ -82,7 +82,57 @@ function generate(goalId,style){const goal=goals[goalId]?goalId:'balanced';const
  else{counts['deflector']=1;counts[wing]=2;counts['mission-radar']=1;}
  return counts;
 }
-window.ATLAS_CORVETTE=Object.freeze({parts:Object.freeze(parts),byId:Object.freeze(byId),required:Object.freeze(required),goals:Object.freeze(goals),defaults,normalize,assess,generate});
+// Only construction parts with a known inventory representation create technology tiles.
+// Relationship = functional stat/system supported by the part; it is not proof
+// of an in-game adjacency bonus. Reactors deliberately stay separate families.
+const systemRelations={
+ 'zenith-reactor':{family:'cv-zenith',link:'hyperdrive',label:'Hyperdrive range',note:'Zenith contributes to hyperdrive performance. Vanilla reactor-to-hyperdrive adjacency is not confirmed.'},
+ 'medusa-reactor':{family:'cv-medusa',link:'pulse',label:'Flight maneuverability',note:'Medusa contributes to maneuverability. Do not assume a Pulse Drive adjacency bonus.'},
+ 'azimuth-reactor':{family:'cv-azimuth',link:'launch',label:'Launch / system recharge',note:'Azimuth is associated with recharge and flight utility. Adjacency is unverified.'},
+ 'ceto-reactor':{family:'cv-ceto',link:'shield',label:'Defensive systems',note:'Ceto affects defence; a direct shield adjacency bonus is not confirmed.'},
+ 'photon-array':{family:'photon',link:'photon',label:'Photon Cannon',adjacent:true},
+ 'phase-array':{family:'beam',link:'beam',label:'Phase Beam',adjacent:true},
+ 'torpedo':{family:'rockets',link:'rockets',label:'Rocket / torpedo weapons',adjacent:true},
+ 'cyclotron':{family:'cyclotron',link:'cyclotron',label:'Cyclotron',adjacent:true},
+ 'infra-knife':{family:'infra',link:'infra',label:'Infra-Knife',adjacent:true},
+ 'deadeye':{family:'cv-deadeye',link:'photon',label:'Deadeye weapon',note:'Special expedition-linked weapon. Its exact adjacency family is not assumed.'}
+};
+const specialFamilies={
+ 'cv-zenith':{name:'Zenith Reactor',short:'ZEN',icon:'warpFreighter',color:'violet',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with hyperdrive range; adjacency not assumed.',next:'Check the installed module in-game.'},
+ 'cv-medusa':{name:'Medusa Reactor',short:'MED',icon:'engine',color:'mint',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with maneuverability; adjacency not assumed.',next:'Check the installed module in-game.'},
+ 'cv-azimuth':{name:'Azimuth Reactor',short:'AZI',icon:'engine',color:'amber',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with system recharge; adjacency not assumed.',next:'Check the installed module in-game.'},
+ 'cv-ceto':{name:'Ceto Reactor',short:'CET',icon:'shield',color:'blue',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with defence; adjacency not assumed.',next:'Check the installed module in-game.'},
+ 'cv-cockpit':{name:'Corvette Cockpit',short:'CPT',icon:'ship',color:'blue',sc:'none',adjacency:'none',maxUpgrades:0,why:'Cockpit construction-generated technology; shared reactor capacity/installation order can matter in-game.',next:'Check which modules actually appear when finalizing the build.'},
+ 'cv-hab':{name:'Habitation / Cargo',short:'HAB',icon:'freighter',color:'amber',sc:'none',adjacency:'none',maxUpgrades:0,why:'Habitation and walkway components provide structural or cargo-related functionality.',next:'Some structural parts may occupy technology space; verify the inventory.'},
+ 'cv-deadeye':{name:'Deadeye Cannon',short:'DED',icon:'cannon',color:'rose',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Expedition weapon technology, modeled separately pending verified adjacency data.',next:'Check the in-game tooltip.'}
+};
+const sharedTechGroups={cockpit:{family:'cv-cockpit',link:'pulse',label:'Cockpit / flight controls'},hab:{family:'cv-hab',label:'Cargo / habitation'},structure:{family:'cv-hab',label:'Cargo / habitation'},landing:{family:'launch',link:'launch',label:'Launch systems',adjacent:true},engine:{family:'pulse',link:'pulse',label:'Pulse Drive',adjacent:true},shield:{family:'shield',link:'shield',label:'Shield Systems',adjacent:true}};
+const groupCaps={cockpit:1,hab:3,landing:3,engine:3,shield:3};
+function technologyManifest(counts){
+ const tiles=[],statuses={},usage={};
+ for(const part of parts){
+  const count=Math.max(0,Math.min(part.limit,Number(counts?.[part.id])||0));
+  const relation=systemRelations[part.id]||sharedTechGroups[part.group];
+  if(!relation){statuses[part.id]={represented:0,cosmetic:count,relation:null};continue;}
+  const pool=part.group==='structure'?'hab':part.group;
+  const shared=Object.hasOwn(groupCaps,pool);
+  const key=shared?pool:part.id;
+  const max=shared?groupCaps[pool]:3;
+  const remaining=Math.max(0,max-(usage[key]||0));
+  const represented=Math.min(count,remaining);
+  usage[key]=(usage[key]||0)+represented;
+  statuses[part.id]={represented,cosmetic:count-represented,relation};
+  for(let n=1;n<=represented;n++)tiles.push({
+   id:`cvpart:${part.id}:${n}`,family:relation.family,role:'construction',sequence:n,
+   partId:part.id,linkFamily:relation.link||null,relationLabel:relation.label,
+   relationNote:relation.note||'',label:`${part.name}${count>1?' · '+n:''}`,icon:part.icon,
+   noAdjacency:!relation.adjacent,construction:true
+  });
+ }
+ return {tiles,statuses};
+}
+window.ATLAS_CORVETTE=Object.freeze({parts:Object.freeze(parts),byId:Object.freeze(byId),required:Object.freeze(required),goals:Object.freeze(goals),defaults,normalize,assess,generate,
+ technologyManifest,specialFamilies:Object.freeze(specialFamilies)});
 window.ATLAS_DATA.gear.corvette={name:'Corvette',icon:'corvette',subtitle:'Modular ship assembly & crew systems',placeholder:'My Corvette',kind:'assembly',goals,families:{}};
 window.ATLAS_DATA.sources.push({name:'Voyagers Corvette construction',url:'https://www.nomanssky.com/voyagers-update/'},{name:'Cosmos Tractor Beam',url:'https://www.nomanssky.com/cosmos-update/'});
 })();

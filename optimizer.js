@@ -32,7 +32,12 @@
         if(selected.has(id+':'+addon.id) && addon.replacesCore)replacements.add(addon.replacesCore);
       }
     }
-    const request = [];
+    // Corvette construction-generated technology is mandatory inventory content.
+    // Reserve these tiles before optional shared ship upgrades so a crowded grid
+    // warns about overflow instead of silently omitting an installed reactor.
+    const mandatory=(Array.isArray(profile.fixedTiles)?profile.fixedTiles:[])
+      .filter(t=>t && t.role==='construction' && gear.families[t.family]);
+    const request = mandatory.slice();
     // Reserve enough capacity for the full highest-priority performance family
     // before spending space on lower-priority families. This is important for
     // small grids: a weapon with 3 upgrades must not be truncated simply
@@ -66,7 +71,7 @@
   function scValue(tile, gear, goal) {
     if (!tile) return 0;
     const family = gear.families[tile.family];
-    if (!family || family.sc === 'none' || family.adjacency === 'none' || tile.noAdjacency) return 0;
+    if (!family || family.sc === 'none' || (tile.role!=='construction' && (family.adjacency === 'none' || tile.noAdjacency))) return 0;
     const weight = Math.max(0, Number(goal.weights[tile.family] ?? 1));
     if (!weight) return 0;
     const preferred = family.sc === tile.role;
@@ -160,7 +165,7 @@
     const requiredSC=new Set(scChoice.selected);
     const scPositions=new Set(sc);
     let bestMap = null, bestStats = null;
-    const seed = stableSeed(JSON.stringify([profile.goal,profile.vehicle,profile.enabled,profile.addons,profile.depth,profile.cols,profile.rows,sc,profile.blocked]));
+    const seed = stableSeed(JSON.stringify([profile.goal,profile.vehicle,profile.enabled,profile.addons,profile.depth,profile.cols,profile.rows,sc,profile.blocked,(profile.fixedTiles||[]).map(t=>t.id)]));
     const loops = Math.min(5600,Math.max(2200,available.length*90));
     for (let run=0;run<7;run++) {
       const rnd = randomGenerator(seed + run*10007);

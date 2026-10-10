@@ -15,7 +15,7 @@ It combines a No Man’s Sky-inspired inventory workbench with a streamlined das
 | **Starship** | Flight systems, launch efficiency, weapons, defenses, hyperdrives, and utility technology, including supported Sentinel Interceptor systems. |
 | **Freighter** | Warp technology, expedition-related upgrades, and onboard utilities. |
 | **Exocraft** | Separate layouts for the Roamer, Nomad, Pilgrim, Colossus, Minotaur, and Nautilon, with vehicle-appropriate technology. |
-| **Corvette** | A modular construction workshop **and** a separate technology-slot optimizer with supercharged-slot planning. |
+| **Corvette** | A modular construction workshop linked directly to a technology grid, with supercharged-slot and adjacency-aware planning. |
 
 The technology catalogs include named crafted upgrades and procedural module families, rather than treating every system as a generic upgrade.
 
@@ -41,7 +41,11 @@ The technology catalogs include named crafted upgrades and procedural module fam
 
 **Corvette Workshop** provides a curated catalog of structural and functional modules, quantity selection, a conceptual front/middle/rear schematic, build-goal starter plans, and a checklist of essential part types. Starter manifests appear only after you request one.
 
-**Corvette Technology Optimizer** is a separate slot grid for applicable shared starship technologies, including manually marked supercharged positions. The physical construction plan and technology layout are saved together but managed independently.
+**Corvette Technology Optimizer** now mirrors functional construction modules in the technology grid as soon as they are added to the Corvette manifest. Reactor types, weapon arrays, engines, shields, landing systems, cockpit, and relevant habitation modules can produce individual construction-linked technology tiles. Additional physical copies beyond each supported tech contribution are tracked as non-tech copies; purely decorative and interior parts do not create technology tiles. These construction tiles are reserved in the grid before optional rolled starship upgrades.
+
+Each linked construction tile records the physical part that created it and the related ship system. For example, Zenith reactors are related to hyperdrive range, Medusa to maneuverability, Azimuth to recharge, and Ceto to defensive systems. Such functional relationships **do not by themselves prove an adjacency bonus**, so the planner visibly distinguishes modeled adjacency connections from relationships that have not been established as adjacency effects. Construction order, Corvette class, available technology space, and current game behavior may affect the actual inventory.
+
+**Adding or removing a Corvette part immediately updates its modeled technology tile(s)** while preserving existing manual slot coordinates when possible. It never silently runs full optimization: press **Optimize Corvette tech** to rearrange the entire matrix based on your supercharged positions, chosen goal, and same-family adjacency. The Corvette planner still includes manually selected shared starship technology and crafted upgrades, separately from construction modules.
 
 ### Keep and revisit your builds
 
@@ -61,6 +65,8 @@ In particular:
 - It **does not** guarantee the strongest possible numerical build for every real-game situation.
 - It **does not** automatically regenerate a layout when you change checkboxes, equipment, goals, or slot positions.
 - The Corvette schematic **does not** simulate full 3D placement, snapping, collision, ship dimensions, or workshop validation. Its essential-parts checklist is a planning check, not proof that a ship can be built exactly as drawn.
+- Corvette construction-to-technology mappings are **planning approximations**, not a direct readout of your in-game inventory. Some parts compete for tech slots, and installation order, class caps and game updates/bugs can change what is shown. Check the Corvette's actual technology inventory after construction.
+- A Corvette reactor's effect on flight statistics **does not imply adjacency synergy** with the corresponding starship system. Unverified relationships are labeled as functional links and are not scored as adjacency bonuses.
 - The Corvette construction catalog is **curated rather than exhaustive**; it does not include every cosmetic, decorative, or structural part.
 - It **does not** provide a dedicated Living Ship organic-technology optimizer.
 - Some upgrades are mission-, expedition-, ship-, or progression-specific. Catalog availability does not mean an item is currently obtainable in every save.
