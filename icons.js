@@ -3,6 +3,7 @@
 (function(){
 'use strict';
 const shapes=Object.freeze({
+  corvette: '<path d="M12 2 16 7 20 10v4l-4 3-4 5-4-5-4-3v-4l4-3z"/><path d="M12 2v20M4 10h16M8 17h8M7 7l5 3 5-3"/>',
   suit: '<path d="M8 3.5 5 6v6l-2 3v4h6v-4h6v4h6v-4l-2-3V6l-3-2.5"/><path d="M8 3.5h8v6l-2 2h-4l-2-2zM10 15h4M7 19v2m10-2v2"/>',
   multitool: '<path d="m3 8 12-3 5 3v5l-5 2-3-2-3 8H5l1-9-3-1z"/><path d="M15 5v8m-9-2 6-2m5-1h4M9 13l3 1"/>',
   ship: '<path d="M12 2 8.5 11 3 15l6 1 3 6 3-6 6-1-5.5-4z"/><path d="M12 2v12m-3 2h6M5 11l-3-3m17 3 3-3"/>',

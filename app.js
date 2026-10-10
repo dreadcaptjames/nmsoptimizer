@@ -3,6 +3,7 @@
 const DATA=window.ATLAS_DATA;
 const SOLVER=window.ATLAS_SOLVER;
 const ICONS=window.ATLAS_ICONS;
+const CV=window.ATLAS_CORVETTE;
 const STORAGE='atlas-max-v1';
 const gearKeys=Object.keys(DATA.gear);
 const app=document.getElementById('app');
@@ -36,12 +37,14 @@ function validAddons(gear,raw,vehicle){
   return out;
 }
 function defaultProfile(key){
+  if(key==='corvette')return CV.defaults();
   const gear=DATA.gear[key],goal=Object.keys(gear.goals)[0],cls='S',vehicle=gear.vehicleOptions?Object.keys(gear.vehicleOptions)[0]:null;
   const cols=key==='exosuit'?10:8,rows=key==='exosuit'?6:5;
   return {name:'',cls,goal,vehicle,cols,rows,sc:demoSC(key,cls,cols,rows),blocked:[],scExample:true,enabled:goalDefaults(gear,goal,vehicle),addons:defaultAddons(gear,vehicle),catalogVersion:2,depth:3,target:'S',layout:null,dirty:false,...(vehicle?{savedVehicles:{}}:{})};
 }
 function initialState(){return {version:1,current:'starship',equipment:Object.fromEntries(gearKeys.map(k=>[k,defaultProfile(k)]))};}
 function normalizeProfile(key,raw){
+  if(key==='corvette')return CV.normalize(raw);
   const base=defaultProfile(key),gear=DATA.gear[key];
   if(!raw||typeof raw!=='object')return base;
   const p={...base};
@@ -172,7 +175,17 @@ function adjacencyFor(i,gear,profile,tile){
     return tile.family==='story'&&['star','remembrance'].includes(tile.addon)&&['star','remembrance'].includes(other.addon)&&tile.addon!==other.addon;
   }).map(x=>x[0]);
 }
+function chrome(key){return `
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">⟁</span><div><div class="brand-name">ATLAS <span>MAX</span></div><div class="brand-sub">NO MAN'S SKY <b>·</b> EQUIPMENT LAB</div></div></div>
+      <div class="top-actions"><span class="version"><i class="dot"></i> ${esc(DATA.release)} REFERENCE</span><button class="top-link" data-action="import" title="Load saved equipment profiles">⇧ <span>Import</span></button><button class="top-link" data-action="export" title="Download your saved equipment profiles">⇩ <span>Export</span></button><input type="file" id="import-file" accept="application/json,.json" class="sr-only"></div>
+    </header>
+    <div class="command-heading"><div><span class="eyebrow"><span class="signal-dot"></span> // TRAVELLER LOADOUT COMMAND</span><h1>Build for <em>what's out there.</em></h1><p>Every slot matters. Design the loadout, find your synergies, and bring the plan into your game.</p></div><div class="command-aside"><span>OPERATIONS / 06 SYSTEMS</span><strong>TECHNOLOGY WORKBENCH</strong><small>Offline-ready · Saved to this browser</small></div></div>
+    <nav class="gear-nav" aria-label="Equipment types">${gearKeys.map((k,i)=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${ICONS.render(DATA.gear[k].icon,'gear-glyph')}</span><span class="gear-text"><b>${esc(DATA.gear[k].name)}</b><small>0${i+1} / EQUIPMENT</small></span><span class="gear-arrow">↗</span></button>`).join('')}</nav>
+`; }
+
 function render(){
+  if(state.current==='corvette'){renderCorvette();return;}
   const {gear,profile,key}=context(),goal=gear.goals[profile.goal],stats=currentStats(gear,profile);
   const scCount=wantedSC(key,profile.cls),openSlots=profile.cols*profile.rows-profile.blocked.length;
   const tilesInGrid=profile.layout?profile.layout.map.filter(x=>x>=0).length:0;
@@ -182,12 +195,7 @@ function render(){
   const hasSkipped=profile.layout&&profile.layout.skipped&&profile.layout.skipped.length;
   const pct=Math.round(100*tilesInGrid/Math.max(1,openSlots));
   app.innerHTML=`
-    <header class="topbar">
-      <div class="brand"><span class="brand-icon" aria-hidden="true">⟁</span><div><div class="brand-name">ATLAS <span>MAX</span></div><div class="brand-sub">NO MAN'S SKY <b>·</b> EQUIPMENT LAB</div></div></div>
-      <div class="top-actions"><span class="version"><i class="dot"></i> ${esc(DATA.release)} REFERENCE</span><button class="top-link" data-action="import" title="Load saved equipment profiles">⇧ <span>Import</span></button><button class="top-link" data-action="export" title="Download your saved equipment profiles">⇩ <span>Export</span></button><input type="file" id="import-file" accept="application/json,.json" class="sr-only"></div>
-    </header>
-    <div class="command-heading"><div><span class="eyebrow"><span class="signal-dot"></span> // TRAVELLER LOADOUT COMMAND</span><h1>Build for <em>what's out there.</em></h1><p>Every slot matters. Design the loadout, find your synergies, and bring the plan into your game.</p></div><div class="command-aside"><span>OPERATIONS / 05 SYSTEMS</span><strong>TECHNOLOGY WORKBENCH</strong><small>Offline-ready · Saved to this browser</small></div></div>
-    <nav class="gear-nav" aria-label="Equipment types">${gearKeys.map((k,i)=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${ICONS.render(DATA.gear[k].icon,'gear-glyph')}</span><span class="gear-text"><b>${esc(DATA.gear[k].name)}</b><small>0${i+1} / EQUIPMENT</small></span><span class="gear-arrow">↗</span></button>`).join('')}</nav>
+    ${chrome(key)}
     <section class="loadout-banner" aria-label="Current loadout">
       <div class="loadout-identity"><span class="loadout-badge">${ICONS.render(gear.icon,'gear-glyph')}</span><div><div class="eyebrow">ACTIVE PROFILE / ${esc(gear.name.toUpperCase())}</div><h2>${esc(profile.name.trim()||gear.name)} <span class="class-badge">${esc(profile.cls)}-CLASS</span></h2><p>${esc(gear.subtitle)}${gear.vehicleOptions?' · '+esc(gear.vehicleOptions[profile.vehicle]):''}</p></div></div>
       <div class="loadout-status ${profile.layout&&!profile.dirty?'ready':''}"><span class="status-dot"></span>${esc(status(profile))}</div>
@@ -244,6 +252,105 @@ function render(){
     <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Local profiles · No game save access · Not affiliated with Hello Games</span></footer>`;
   if(technologyQuery)applySearch();
 }
+function corvetteStatus(p,stats){return !stats.exterior&&!stats.interior?'No build yet':p.generated&&!p.dirty?'Starter plan ready':p.generated?'Customized plan':'Custom draft';}
+function renderCorvette(){
+ const key='corvette',p=state.equipment.corvette,stats=CV.assess(p),goal=CV.goals[p.goal];
+ const active=CV.parts.filter(part=>p.counts[part.id]);
+ const inspected=CV.byId[p.selected]||active[0]||null;
+ const sections=[...new Set(CV.parts.map(part=>part.section))];
+ const zoneLabel={fore:'FORE / COMMAND',mid:'MID / SYSTEMS',aft:'AFT / PROPULSION'};
+ const viewZone=z=>active.filter(part=>(p.zones[part.id]||part.zone)===z&&part.kind==='exterior');
+ const partsHtml=sections.map(section=>{
+   const list=CV.parts.filter(part=>part.section===section);
+   const selectedCount=list.reduce((n,x)=>n+(p.counts[x.id]||0),0);
+   return `<section class="cv-group" data-cv-group="${esc(section)}"><h4>${esc(section)} <span>${selectedCount} selected</span></h4>
+    ${list.map(part=>{const qty=p.counts[part.id]||0;
+     return `<div class="cv-part" data-cv-search="${esc((part.name+' '+section+' '+part.group).toLowerCase())}"><button type="button" class="cv-part-title" data-action="cv-select" data-part="${esc(part.id)}" title="Inspect ${esc(part.name)}"><span class="cv-part-icon">${ICONS.render(part.icon,'family-glyph')}</span><span><strong>${esc(part.name)}</strong><small>${esc(part.kind==='interior'?'Interior furnishing':part.group)}</small></span></button><div class="cv-stepper"><button type="button" data-action="cv-minus" data-part="${esc(part.id)}" aria-label="Remove one ${esc(part.name)}" ${qty===0?'disabled':''}>−</button><output aria-label="Quantity">${qty}</output><button type="button" data-action="cv-plus" data-part="${esc(part.id)}" aria-label="Add one ${esc(part.name)}" ${qty===part.limit?'disabled':''}>+</button></div></div>`;
+    }).join('')}</section>`;
+ }).join('');
+ app.innerHTML=`${chrome(key)}
+  <section class="loadout-banner cv-banner" aria-label="Current Corvette plan">
+    <div class="loadout-identity"><span class="loadout-badge">${ICONS.render('corvette','gear-glyph')}</span><div><div class="eyebrow">ACTIVE PROFILE / CORVETTE WORKSHOP</div><h2>${esc(p.name||'My Corvette')} <span class="class-badge">${esc(p.cls)}-CLASS</span></h2><p>Modular construction · Habitable ship · Conceptual layout</p></div></div>
+    <div class="loadout-status ${stats.ready&&stats.exterior?'ready':''}"><span class="status-dot"></span>${esc(corvetteStatus(p,stats))}</div>
+  </section>
+  <div class="cv-metrics">
+   <div class="metric"><span class="metric-icon">◈</span><div><div class="metric-name">EXTERIOR MODULES</div><div class="metric-value">${stats.exterior}</div></div></div>
+   <div class="metric"><span class="metric-icon">⌂</span><div><div class="metric-name">INTERIOR AMENITIES</div><div class="metric-value">${stats.interior}</div></div></div>
+   <div class="metric"><span class="metric-icon">✓</span><div><div class="metric-name">REQUIRED SYSTEMS</div><div class="metric-value">${CV.required.length-stats.missing.length}<span>/${CV.required.length}</span></div></div></div>
+   <div class="metric purple"><span class="metric-icon">⌘</span><div><div class="metric-name">CONFIGURATION</div><div class="metric-value cv-metric-word">${stats.ready?'VALID CORE':'DRAFT'}</div></div></div>
+  </div>
+  <div class="cv-workspace">
+   <aside class="panel cv-library">
+    <div class="panel-heading"><div><span class="eyebrow">01 / CORVETTE MODULES</span><h3>Construction catalog</h3></div><small>${CV.parts.length} named parts</small></div>
+    <div class="cv-library-inner"><p class="cv-help">Adjust quantities for the modules you own or plan to obtain. All counts start empty; nothing is added automatically.</p><label class="sr-only" for="cv-search">Search Corvette modules</label><input id="cv-search" class="control" type="search" placeholder="Search parts or systems" value="${esc(corvetteQuery)}" autocomplete="off"><div class="cv-catalog" id="cv-catalog">${partsHtml}</div></div>
+   </aside>
+   <main class="cv-main">
+    <section class="panel cv-planner"><div class="planner-head"><div><span class="eyebrow">02 / WORKSHOP CONFIGURATION</span><h2>Build your Corvette</h2><p class="helper">Create a suggested starter manifest or assemble your own. Your choices are saved locally.</p></div></div>
+     <div class="cv-settings">
+       <label>Ship name<input id="cv-name" class="control" maxlength="80" placeholder="My Corvette" value="${esc(p.name)}"></label>
+       <label>Build focus<select id="cv-goal" class="control">${Object.entries(CV.goals).map(([id,g])=>`<option value="${id}" ${p.goal===id?'selected':''}>${esc(g.label)}</option>`).join('')}</select></label>
+       <label>Design family<select id="cv-style" class="control">${['Titan','Ambassador','Thunderbird','Mixed'].map(v=>`<option value="${v}" ${p.style===v?'selected':''}>${v}</option>`).join('')}</select></label>
+       <label>Current ship class<select id="cv-class" class="control">${['C','B','A','S'].map(v=>`<option value="${v}" ${p.cls===v?'selected':''}>${v}-class</option>`).join('')}</select></label>
+     </div>
+     <div class="cv-toolbar"><button class="btn primary" data-action="cv-generate">✧ Generate starter plan ↗</button><button class="btn" data-action="cv-copy">⧉ Copy manifest</button><button class="btn quiet warn" data-action="cv-reset">Reset Corvette</button></div>
+     <div class="cv-assignment-note">${esc(goal.tip)} Changing the focus or design family does not replace your current plan. Generate only when you're ready.</div>
+     <div class="cv-ship-panel"><div class="cv-ship-head"><span class="eyebrow">03 / SCHEMATIC OVERVIEW</span><span>NOT TO SCALE · NO SNAP VALIDATION</span></div>
+       <div class="cv-blueprint">
+         <div class="cv-hull-shape" aria-hidden="true"><span>◆</span></div>
+         <div class="cv-zones">${['fore','mid','aft'].map(z=>`<section class="cv-zone"><h4>${zoneLabel[z]}</h4>${viewZone(z).length?viewZone(z).map(part=>`<button class="cv-chip" data-action="cv-select" data-part="${esc(part.id)}">${ICONS.render(part.icon,'cv-chip-icon')}<span>${esc(part.name)}</span><b>×${p.counts[part.id]}</b></button>`).join(''):'<p>No modules assigned</p>'}</section>`).join('')}</div>
+       </div>
+       <p class="tiny cv-schematic-note">This is a planning map of module groups, not a 3D Corvette build or a substitute for the Space Station Workshop. You can assign modules to broad zones in the inspector.</p>
+     </div>
+     <div class="cv-validation"><h3>Flight-ready core checklist <span>${CV.required.length-stats.missing.length} of ${CV.required.length}</span></h3><div class="cv-checks">${CV.required.map(([id,label])=>`<div class="cv-check ${stats.byGroup[id]?'ok':''}"><span>${stats.byGroup[id]?'✓':'○'}</span>${esc(label)}</div>`).join('')}</div>
+      <div class="notice ${stats.ready?'':'warning'}">${stats.ready?'<strong>All required module groups present.</strong> Physical placement, snap connections, limits, and performance must still be verified in-game.':`<strong>Missing required groups:</strong> ${esc(stats.missing.map(x=>x[1]).join(', '))}.`}</div>
+     </div>
+    </section>
+   </main>
+   <aside class="panel cv-insights"><div class="panel-heading"><div><span class="eyebrow">04 / ASSEMBLY INTELLIGENCE</span><h3>Workshop inspector</h3></div></div>
+    <div class="cv-inspector-body">${inspected?`<div class="inspector-card"><div class="inspector-kicker">SELECTED MODULE</div><div class="inspector-title"><span class="family-icon mint">${ICONS.render(inspected.icon,'family-glyph')}</span><div><strong>${esc(inspected.name)}</strong><small>${esc(inspected.section)}</small></div></div><p>${esc(inspected.description)}</p><div class="inspector-note">${esc(inspected.kind==='interior'?'Interior furnishing — not included in exterior structural count.':'Exterior module — verify availability and attachment rules in the game.')}</div><label class="cv-zone-select">Planning zone<select class="control" data-cv-zone="${esc(inspected.id)}">${['fore','mid','aft'].map(z=>`<option value="${z}" ${(p.zones[inspected.id]||inspected.zone)===z?'selected':''}>${zoneLabel[z]}</option>`).join('')}</select></label></div>`:`<div class="inspect-empty"><span class="inspect-placeholder">${ICONS.render('corvette','gear-glyph')}</span><strong>Nothing selected</strong><p>Choose a module in the catalog to see its details and edit its planned position.</p></div>`}
+     <section class="cv-readiness"><h4>Build assessment</h4><p>${stats.ready?'Required systems are represented in this plan. This is not proof of build validity.':'Add all required module groups before attempting to finalize your Corvette.'}</p><div class="cv-priority"><strong>Focus: ${esc(goal.label)}</strong><span>${esc(goal.tip)}</span></div></section>
+     <section class="cv-readiness"><h4>Corvette-only mechanics</h4><p>Structural modules can create technology and modify ship stats. This planner does <b>not</b> apply the ordinary three procedural-upgrade limit or claim real DPS, warp range, or adjacency multipliers.</p><p>Interior furnishings use a different construction process from exterior modules.</p></section>
+     <section class="cv-reference"><a href="https://www.nomanssky.com/voyagers-update/" target="_blank" rel="noopener noreferrer">Voyagers Corvette Workshop ↗</a><a href="https://www.nomanssky.com/cosmos-update/" target="_blank" rel="noopener noreferrer">Cosmos Tractor Beam ↗</a><a href="https://www.nomansskyresources.com/corvette-parts" target="_blank" rel="noopener noreferrer">Browse Corvette parts ↗</a></section>
+    </div>
+   </aside>
+  </div>
+  <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Local profiles · No game save access · Not affiliated with Hello Games</span></footer>`;
+ if(corvetteQuery)applyCorvetteSearch();
+}
+let corvetteQuery='';
+function applyCorvetteSearch(){
+ const root=document.getElementById('cv-catalog');if(!root||!root.querySelectorAll)return;
+ const q=corvetteQuery.toLowerCase().trim();
+ root.querySelectorAll('.cv-group').forEach(group=>{
+  let visible=0;group.querySelectorAll('.cv-part').forEach(el=>{
+   const match=!q||el.dataset.cvSearch.includes(q);el.classList.toggle('filtered-out',!match);if(match)visible++;
+  });group.classList.toggle('filtered-out',visible===0);
+ });
+}
+function corvetteMutate(partId,increment){
+ const part=CV.byId[partId],p=state.equipment.corvette;if(!part)return;
+ const old=p.counts[partId]||0,next=Math.min(part.limit,Math.max(0,old+increment));
+ if(next===old)return;
+ if(part.group==='cockpit'&&next>0){for(const other of CV.parts.filter(item=>item.group==='cockpit'&&item.id!==partId))delete p.counts[other.id];}
+ if(next)p.counts[partId]=next;else delete p.counts[partId];
+ p.selected=partId;p.dirty=!!p.generated;save();render();
+}
+function handleCorvetteClick(action,d){const p=state.equipment.corvette;
+ if(action==='cv-plus'||action==='cv-minus'){corvetteMutate(d.part,action==='cv-plus'?1:-1);return;}
+ if(action==='cv-select'){if(CV.byId[d.part]){p.selected=d.part;save();render();}return;}
+ if(action==='cv-generate'){
+  if(Object.keys(p.counts).length && !window.confirm('Replace this Corvette manifest with a new starter plan? Your current module quantities will be replaced.'))return;
+  p.counts=CV.generate(p.goal,p.style);p.zones={};p.selected=null;p.generated=true;p.dirty=false;save();render();toast('Starter plan generated. Verify all physical connections in the in-game workshop.');return;
+ }
+ if(action==='cv-reset'){if(window.confirm('Reset the Corvette manifest and settings?')){state.equipment.corvette=CV.defaults();save();render();toast('Corvette profile reset.');}return;}
+ if(action==='cv-copy'){
+  const assessment=CV.assess(p);const partList=CV.parts.filter(x=>p.counts[x.id]).map(x=>`${p.counts[x.id]} × ${x.name} [${p.zones[x.id]||x.zone}, ${x.kind}]`).join('\n');
+  const txt=`ATLAS MAX • Corvette: ${p.name||'My Corvette'}\nFocus: ${CV.goals[p.goal].label} | Class: ${p.cls} | Style: ${p.style}\nExterior modules: ${assessment.exterior}; Interior furnishings: ${assessment.interior}\nRequired core groups: ${CV.required.length-assessment.missing.length}/${CV.required.length}\n${assessment.missing.length?'Missing: '+assessment.missing.map(x=>x[1]).join(', '):'All required part groups represented'}\n\n${partList||'(No modules selected)'}\n\nConceptual manifest only; verify assembly, availability and real stats in No Man’s Sky.`;
+  copyPlainText(txt,'Corvette manifest copied.');return;
+ }
+}
+async function copyPlainText(txt,done){try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(txt);else{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();if(!document.execCommand('copy'))throw Error('Unsupported clipboard');t.remove();}toast(done);}catch(e){toast('Clipboard unavailable; use Export to save all profiles.',true);}}
+
 function renderCell(i,gear,profile){
   const locked=profile.blocked.includes(i),sc=profile.sc.includes(i);
   const tileIndex=profile.layout?profile.layout.map[i]:-1;
@@ -350,6 +457,7 @@ app.addEventListener('click',event=>{
   const button=event.target.closest('button[data-action]');if(!button)return;
   const action=button.dataset.action;const{key,gear,profile}=context();
   if(action==='gear'){if(gearKeys.includes(button.dataset.gear)){state.current=button.dataset.gear;selectedCell=null;activeTile=null;editing='move';save();render();}return;}
+  if(key==='corvette' && action.startsWith('cv-')){handleCorvetteClick(action,button.dataset);return;}
   if(action==='panel'){if(button.dataset.panel==='config')configOpen=!configOpen;else if(button.dataset.panel==='insights')insightsOpen=!insightsOpen;render();return;}
   if(action==='depth'){profile.depth=clamp(button.dataset.depth,1,3);layoutChanged(profile);return;}
   if(action==='mode'){editing=button.dataset.mode;selectedCell=null;activeTile=null;render();return;}
@@ -365,6 +473,15 @@ app.addEventListener('click',event=>{
 app.addEventListener('change',event=>{
   const t=event.target;const{key,gear,profile}=context();
   if(t.id==='import-file'){importJSON(t.files&&t.files[0]);return;}
+  if(key==='corvette'){
+    const p=state.equipment.corvette;
+    if(t.id==='cv-goal'&&CV.goals[t.value]){p.goal=t.value;save();render();return;}
+    if(t.id==='cv-style'&&['Titan','Ambassador','Thunderbird','Mixed'].includes(t.value)){p.style=t.value;save();render();return;}
+    if(t.id==='cv-class'&&['C','B','A','S'].includes(t.value)){p.cls=t.value;save();render();return;}
+    if(t.id==='cv-name'){p.name=t.value.trim().slice(0,80);save();render();return;}
+    if(t.dataset?.cvZone&&CV.byId[t.dataset.cvZone]&&['fore','mid','aft'].includes(t.value)){p.zones[t.dataset.cvZone]=t.value;save();render();return;}
+    return;
+  }
   if(t.dataset && t.dataset.family){const id=t.dataset.family;if(t.checked&&!profile.enabled.includes(id))profile.enabled.push(id);
     if(!t.checked)profile.enabled=profile.enabled.filter(x=>x!==id);layoutChanged(profile);return;}
   if(t.dataset && t.dataset.addon){
@@ -424,7 +541,7 @@ app.addEventListener('toggle',event=>{
   if(t.open)expandedAddons.add(t.dataset.addonGroup);
   else expandedAddons.delete(t.dataset.addonGroup);
 },true);
-app.addEventListener('input',event=>{if(event.target.id==='gear-name'){context().profile.name=event.target.value.slice(0,80);save();}});
+app.addEventListener('input',event=>{if(event.target.id==='gear-name'){context().profile.name=event.target.value.slice(0,80);save();} if(event.target.id==='cv-name'){state.equipment.corvette.name=event.target.value.slice(0,80);save();}});
 function applySearch(){
   const list=document.getElementById('family-list');if(!list||!list.querySelectorAll)return;
   const query=technologyQuery.trim().toLowerCase();
@@ -439,6 +556,7 @@ function applySearch(){
   if(group)group.classList.toggle('filtered-out',!hasVisible);
 }
 app.addEventListener('input',event=>{
+  if(event.target.id==='cv-search'){corvetteQuery=event.target.value.slice(0,100);applyCorvetteSearch();return;}
   if(event.target.id==='search-tech'){
     technologyQuery=event.target.value.slice(0,100);
     applySearch();
