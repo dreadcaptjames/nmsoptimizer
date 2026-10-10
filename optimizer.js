@@ -33,20 +33,16 @@
       }
     }
     const request = [];
-    // Place critical cores and one procedural roll before optional technology.
-    // The module cap applies only to generated upgrades, never crafted blueprints.
+    // Reserve enough capacity for the full highest-priority performance family
+    // before spending space on lower-priority families. This is important for
+    // small grids: a weapon with 3 upgrades must not be truncated simply
+    // because an unrelated engine happened to request its core first.
+    // The module cap applies only to procedural upgrades, never blueprints.
     for (const id of active) {
       const family = gear.families[id];
       if (family.core && !replacements.has(id)) request.push({id:id+':core',family:id,role:'core',sequence:0,label:family.core});
-      if (family.maxUpgrades > 0 && profile.depth >= 1)
-        request.push({id:id+':1',family:id,role:'upgrade',sequence:1,label:family.upgrade});
-    }
-    for (let sequence = 2;sequence <= Math.min(3,profile.depth || 3);sequence++) {
-      for (const id of active) {
-        const family=gear.families[id];
-        if (sequence <= (family.maxUpgrades || 0))
-          request.push({id:id+':'+sequence,family:id,role:'upgrade',sequence,label:family.upgrade});
-      }
+      for (let sequence=1;sequence<=Math.min(3,profile.depth||3,family.maxUpgrades||0);sequence++)
+        request.push({id:id+':'+sequence,family:id,role:'upgrade',sequence,label:family.upgrade});
     }
     // Every named crafted technology is its own installable tile; these are not
     // generic procedural upgrades and cannot consume the module limit.
@@ -79,6 +75,19 @@
     // Supercharging is a primary objective; ordinary adjacency is a secondary
     // objective when two candidates have similar SC value.
     return 18 * weight * roleFactor * quality;
+  }
+  // The selected goal defines a *family-first* order for supercharged slots.
+  // Within a family, use the strongest modeled module first. Ignore technology
+  // with no modeled SC benefit. This is intentionally not a claim about exact
+  // rolled stats: players still need to compare their real upgrades in-game.
+  function superchargedPlan(tiles, gear, goal, count) {
+    const ranked = tiles.map((tile,i)=>({index:i,family:tile.family,
+      weight:Math.max(0,Number(goal.weights[tile.family]??1)),
+      priority:scValue(tile,gear,goal)}))
+      .filter(x=>x.priority>0)
+      .sort((a,b)=>b.weight-a.weight || b.priority-a.priority || a.index-b.index);
+    const selected=ranked.slice(0,Math.max(0,Math.floor(Number(count)||0))).map(x=>x.index);
+    return {ranked,selected,focusFamily:ranked.length?ranked[0].family:null};
   }
   function scoreMap(map, tiles, gear, goal, cols, rows, supercharged) {
     let score = 0, connections = 0, usedSC = 0, effectiveSC = 0;
@@ -139,12 +148,17 @@
     const size = cols*rows;
     const blocked = new Set(profile.blocked.filter(i => i>=0 && i<size));
     const available = Array.from({length:size},(_,i)=>i).filter(i=>!blocked.has(i));
-    const sc = profile.sc.filter(i => i>=0 && i<size && !blocked.has(i));
+    const sc = [...new Set(profile.sc.filter(i => i>=0 && i<size && !blocked.has(i)))];
     const goal = gear.goals[profile.goal];
     if (!goal) throw new Error('Unknown build focus.');
     const assembled = assemble(gear,profile,available.length);
     const tiles = assembled.tiles;
     if (tiles.length === 0) throw new Error('Enable at least one technology family before optimizing.');
+    // Stage one: commit the most valuable *eligible priority-family* modules to
+    // the marked SC positions. Stage two: solve adjacency without evicting them.
+    const scChoice=superchargedPlan(tiles,gear,goal,sc.length);
+    const requiredSC=new Set(scChoice.selected);
+    const scPositions=new Set(sc);
     let bestMap = null, bestStats = null;
     const seed = stableSeed(JSON.stringify([profile.goal,profile.vehicle,profile.enabled,profile.addons,profile.depth,profile.cols,profile.rows,sc,profile.blocked]));
     const loops = Math.min(5600,Math.max(2200,available.length*90));
@@ -153,23 +167,17 @@
       const map = Array(size).fill(-1);
       const shuffled = available.slice();
       for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
-      // Put strong SC candidates in the *actual marked coordinates* first,
-      // then anneal the remainder for compact adjacency clusters. This avoids
-      // starting every attempt with filler modules on the rare SC positions.
-      const ranked=tiles.map((tile,i)=>({i,priority:scValue(tile,gear,goal),jitter:rnd()}))
-        .sort((a,b)=>b.priority-a.priority || a.jitter-b.jitter);
+      // Fill as many marked SC positions as logically beneficial, using goal
+      // order first (e.g. all viable primary-weapon tiles), THEN lower ranks.
+      // Runs vary the slot assignments to find a stronger adjacency pattern.
       const availableSC=sc.slice().sort((a,b)=>
         getNeighbors(b,cols,rows).filter(p=>!blocked.has(p)).length-
         getNeighbors(a,cols,rows).filter(p=>!blocked.has(p)).length);
+      if(run%2===1)availableSC.reverse();
       const assigned=new Set(),filled=new Set();
-      // Some attempts use the very best SC matches; others diversify the seed
-      // to escape traps where adjacency requires a different SC combination.
-      if(run<5){
-        for(let j=0;j<Math.min(availableSC.length,ranked.length);j++){
-          if(ranked[j].priority<=0)break;
-          map[availableSC[j]]=ranked[j].i;
-          assigned.add(ranked[j].i);filled.add(availableSC[j]);
-        }
+      for(let j=0;j<scChoice.selected.length;j++){
+        map[availableSC[j]]=scChoice.selected[j];
+        assigned.add(scChoice.selected[j]);filled.add(availableSC[j]);
       }
       const unfilled=shuffled.filter(p=>!filled.has(p));
       const remaining=tiles.map((_,i)=>i).filter(i=>!assigned.has(i));
@@ -181,6 +189,13 @@
         const a=available[Math.floor(rnd()*available.length)];
         const b=available[Math.floor(rnd()*available.length)];
         if(a===b || (map[a]===-1 && map[b]===-1))continue;
+        // Never sacrifice a higher-priority SC placement just to gain a few
+        // adjacency points. Swaps inside or outside SC remain unrestricted,
+        // and unclaimed purple positions can accept lower-priority modules.
+        if(scPositions.has(a)!==scPositions.has(b)){
+          const ai=map[a],bi=map[b];
+          if((ai>=0&&requiredSC.has(ai)) !== (bi>=0&&requiredSC.has(bi)))continue;
+        }
         [map[a],map[b]]=[map[b],map[a]];
         const trial=scoreMap(map,tiles,gear,goal,cols,rows,sc);
         const progress=i/loops;
@@ -198,7 +213,7 @@
     if(!result || !Array.isArray(result.map) || !Array.isArray(result.tiles))return null;
     return scoreMap(result.map,result.tiles,gear,gear.goals[profile.goal],profile.cols,profile.rows,profile.sc);
   }
-  const api = { solve, summarize, assemble, getNeighbors, index, scValue };
+  const api = { solve, summarize, assemble, getNeighbors, index, scValue, superchargedPlan };
   if(typeof module !== 'undefined' && module.exports)module.exports=api;
   root.ATLAS_SOLVER=api;
 })(typeof window!=='undefined'?window:globalThis);

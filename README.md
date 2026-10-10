@@ -32,7 +32,8 @@ The technology catalogs include named crafted upgrades and procedural module fam
 
 - Choose a goal suited to the equipment, such as movement, combat, exploration, or travel.
 - Generate a suggested arrangement **only when you explicitly choose Optimize layout**.
-- Weigh compatible orthogonal adjacency, supercharged-slot positions, and technology priorities together.
+- **Fill supercharged slots according to your chosen goal first:** prioritize as many eligible modules from the highest-ranked family as are useful and available, then continue to the next family if purple slots remain.
+- Arrange the remaining technology around those supercharged assignments to improve compatible orthogonal adjacency.
 - Inspect which technologies occupy supercharged slots and view their *relative planning contribution*.
 - Distinguish core technology, crafted blueprints, and procedural upgrades; enforce supported procedural module limits and selected incompatibilities.
 

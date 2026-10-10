@@ -48,3 +48,7 @@
 .sc-assignment b{color:#dac0fc}
 .sc-assignment.is-filler{opacity:.7}
 .sc-analysis .sc-disclaimer,.sc-analysis .sc-analysis-empty{font-size:9px;line-height:1.6;color:#a998bc;margin:10px 0 0}
+
+/* SC-first planning strategy explanation */
+.sc-focus-strategy{border:1px solid #645185;background:#271e3b;border-radius:8px;padding:10px;margin:10px 0 11px;font-size:10px;line-height:1.6;color:#e4cfff}
+.sc-focus-strategy strong{color:#f4e7ff}.sc-focus-strategy span{color:#b8a8cb}
