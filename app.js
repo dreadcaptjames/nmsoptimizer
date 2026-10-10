@@ -202,8 +202,51 @@ function chrome(key){return `
     <nav class="gear-nav" aria-label="Equipment types">${gearKeys.map((k,i)=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${ICONS.render(DATA.gear[k].icon,'gear-glyph')}</span><span class="gear-text"><b>${esc(DATA.gear[k].name)}</b><small>0${i+1} / EQUIPMENT</small></span><span class="gear-arrow">↗</span></button>`).join('')}</nav>
 `; }
 
+// Rebuilding the entire workbench used to jump long blueprint lists back to the top.
+// Preserve real scroll containers, expanded groups, and checkbox focus across refreshes.
+// Only restore when the user is staying in the same equipment category.
+const scrollContainers=['#config-panel','#family-list','.insight-panel',
+  '.cv-library','#cv-catalog','.cv-insights','.cv-tech-families','.grid-scroll'];
+const persistentDetails=['.cv-tech-library','.cv-tech-family details','.addon-details',
+  '.technology-plan','.guide'];
+const checkboxKeys=['addon','family','cvTechAddon','cvTechFamily'];
+function captureWorkbenchView(){
+  if(!app.querySelector || !app.querySelector('.gear-btn.active'))return null;
+  const current=app.querySelector('.gear-btn.active').dataset.gear;
+  const scrolls=scrollContainers.map(selector=>({selector,positions:
+    [...app.querySelectorAll(selector)].map(node=>[node.scrollTop,node.scrollLeft])}));
+  const details=persistentDetails.map(selector=>({selector,
+    opened:[...app.querySelectorAll(selector)].map(node=>node.open)}));
+  const active=document.activeElement;
+  const focus=active&&app.contains(active)?checkboxKeys.map(key=>active.dataset?.[key]!=null?
+    {key,value:active.dataset[key]}:null).find(Boolean):null;
+  return {current,scrolls,details,focus,
+    pageX:window.scrollX||0,pageY:window.scrollY||0};
+}
+function restoreWorkbenchView(view){
+  if(!view || view.current!==state.current || !app.querySelectorAll)return;
+  // Details must be expanded before restoring scroll; otherwise the browser
+  // clamps scrollTop to the shortened list's height.
+  for(const group of view.details){
+    const nodes=app.querySelectorAll(group.selector);
+    group.opened.forEach((opened,i)=>{if(nodes[i])nodes[i].open=opened;});
+  }
+  if(view.focus){
+    const selector=`[data-${view.focus.key.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}]`;
+    const next=[...app.querySelectorAll(selector)].find(node=>node.dataset[view.focus.key]===view.focus.value);
+    if(next&&!next.disabled&&typeof next.focus==='function')next.focus({preventScroll:true});
+  }
+  for(const group of view.scrolls){
+    const nodes=app.querySelectorAll(group.selector);
+    group.positions.forEach(([top,left],i)=>{
+      if(nodes[i]){nodes[i].scrollTop=top;nodes[i].scrollLeft=left;}
+    });
+  }
+  if(typeof window.scrollTo==='function')window.scrollTo(view.pageX,view.pageY);
+}
 function render(){
-  if(state.current==='corvette'){renderCorvette();return;}
+  const view=captureWorkbenchView();
+  if(state.current==='corvette'){renderCorvette();restoreWorkbenchView(view);return;}
   const {gear,profile,key}=context(),goal=gear.goals[profile.goal],stats=currentStats(gear,profile);
   const scCount=wantedSC(key,profile.cls),openSlots=profile.cols*profile.rows-profile.blocked.length;
   const tilesInGrid=profile.layout?profile.layout.map.filter(x=>x>=0).length:0;
@@ -269,6 +312,7 @@ function render(){
     </div>
     <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Local profiles · No game save access · Not affiliated with Hello Games</span></footer>`;
   if(technologyQuery)applySearch();
+  restoreWorkbenchView(view);
 }
 function corvetteStatus(p,stats){return !stats.exterior&&!stats.interior?'No build yet':p.generated&&!p.dirty?'Starter plan ready':p.generated?'Customized plan':'Custom draft';}
 function renderCorvetteTech(p){
