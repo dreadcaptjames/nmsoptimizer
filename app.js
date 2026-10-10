@@ -139,13 +139,11 @@ function normalizeProfile(key,raw){
   }
   return p;
 }
-function loadState(){
-  try{const raw=JSON.parse(localStorage.getItem(STORAGE));if(raw&&raw.version===1&&raw.equipment){
-    return{version:1,current:gearKeys.includes(raw.current)?raw.current:'starship',equipment:Object.fromEntries(gearKeys.map(k=>[k,normalizeProfile(k,raw.equipment[k])]))};
-  }}catch(e){}
-  return initialState();
-}
-let state=loadState();
+// Every page load starts with the same clean defaults as the Reset controls.
+// Browser-local snapshots may exist for an older version or the current visit,
+// but must never be restored automatically. Only the Import button restores builds.
+// Normal in-page category changes still use this in-memory state.
+let state=initialState();
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){}}
 function context(){const key=state.current;return{key,gear:DATA.gear[key],profile:state.equipment[key]};}
 function noteChange(){const{profile}=context();profile.dirty=!!profile.layout;save();}
@@ -198,7 +196,7 @@ function chrome(key){return `
       <div class="brand"><span class="brand-icon" aria-hidden="true">⟁</span><div><div class="brand-name">ATLAS <span>MAX</span></div><div class="brand-sub">NO MAN'S SKY <b>·</b> EQUIPMENT LAB</div></div></div>
       <div class="top-actions"><span class="version"><i class="dot"></i> ${esc(DATA.release)} REFERENCE</span><button class="top-link" data-action="import" title="Load saved equipment profiles">⇧ <span>Import</span></button><button class="top-link" data-action="export" title="Download your saved equipment profiles">⇩ <span>Export</span></button><input type="file" id="import-file" accept="application/json,.json" class="sr-only"></div>
     </header>
-    <div class="command-heading"><div><span class="eyebrow"><span class="signal-dot"></span> // TRAVELLER LOADOUT COMMAND</span><h1>Build for <em>what's out there.</em></h1><p>Every slot matters. Design the loadout, find your synergies, and bring the plan into your game.</p></div><div class="command-aside"><span>OPERATIONS / 06 SYSTEMS</span><strong>TECHNOLOGY WORKBENCH</strong><small>Offline-ready · Saved to this browser</small></div></div>
+    <div class="command-heading"><div><span class="eyebrow"><span class="signal-dot"></span> // TRAVELLER LOADOUT COMMAND</span><h1>Build for <em>what's out there.</em></h1><p>Every slot matters. Design the loadout, find your synergies, and bring the plan into your game.</p></div><div class="command-aside"><span>OPERATIONS / 06 SYSTEMS</span><strong>TECHNOLOGY WORKBENCH</strong><small>Offline-ready · Fresh session · Export to keep</small></div></div>
     <nav class="gear-nav" aria-label="Equipment types">${gearKeys.map((k,i)=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${ICONS.render(DATA.gear[k].icon,'gear-glyph')}</span><span class="gear-text"><b>${esc(DATA.gear[k].name)}</b><small>0${i+1} / EQUIPMENT</small></span><span class="gear-arrow">↗</span></button>`).join('')}</nav>
 `; }
 
@@ -267,7 +265,7 @@ function render(){
         <div class="config-body" id="config-body">
           <div class="config-block"><div class="form-row"><label class="label" for="gear-name">Loadout name</label><input id="gear-name" class="control" maxlength="80" placeholder="${esc(gear.placeholder)}" value="${esc(profile.name)}"></div>
             <div class="controls-2"><div class="form-row"><label class="label" for="gear-class">Equipment class</label><select id="gear-class" class="control" ${gear.fixedSC?'disabled title="Supercharged slots do not scale with class for this equipment"':''}>${selectorOptions(['C','B','A','S'],profile.cls,v=>v+' class')}</select></div><div class="form-row"><label class="label" for="gear-target">Upgrade target</label><select id="gear-target" class="control">${selectorOptions(['S','X'],profile.target,v=>v+' class')}</select></div></div>
-            ${gear.vehicleOptions?`<div class="form-row"><label class="label" for="vehicle">Exocraft model</label><select id="vehicle" class="control">${Object.entries(gear.vehicleOptions).map(([id,name])=>`<option value="${id}" ${profile.vehicle===id?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="tiny">Each vehicle retains its own saved loadout.</p></div>`:''}
+            ${gear.vehicleOptions?`<div class="form-row"><label class="label" for="vehicle">Exocraft model</label><select id="vehicle" class="control">${Object.entries(gear.vehicleOptions).map(([id,name])=>`<option value="${id}" ${profile.vehicle===id?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="tiny">Each vehicle keeps its layout until the page is reloaded. Export to keep it.</p></div>`:''}
             <div class="form-row"><label class="label" for="goal">Optimization focus</label><select id="goal" class="control">${Object.entries(gear.goals).map(([id,g])=>`<option value="${id}" ${id===profile.goal?'selected':''}>${esc(g.label)}</option>`).join('')}</select></div>
             <div class="form-row"><label class="label">Rolled modules / family</label><div class="segmented" role="group" aria-label="Module cap">${[1,2,3].map(i=>`<button data-action="depth" data-depth="${i}" class="${i===profile.depth?'current':''}" aria-pressed="${i===profile.depth}">${i}</button>`).join('')}</div><p class="tiny">Crafted blueprints do not use these slots.</p></div>
           </div>
@@ -310,7 +308,7 @@ function render(){
         </div>
       </aside>
     </div>
-    <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Local profiles · No game save access · Not affiliated with Hello Games</span></footer>`;
+    <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
   if(technologyQuery)applySearch();
   restoreWorkbenchView(view);
 }
@@ -368,7 +366,7 @@ function renderCorvette(){
     <div class="cv-library-inner"><p class="cv-help">Adjust quantities for the modules you own or plan to obtain. All counts start empty; nothing is added automatically.</p><label class="sr-only" for="cv-search">Search Corvette modules</label><input id="cv-search" class="control" type="search" placeholder="Search parts or systems" value="${esc(corvetteQuery)}" autocomplete="off"><div class="cv-catalog" id="cv-catalog">${partsHtml}</div></div>
    </aside>
    <main class="cv-main">
-    <section class="panel cv-planner"><div class="planner-head"><div><span class="eyebrow">02 / WORKSHOP CONFIGURATION</span><h2>Build your Corvette</h2><p class="helper">Create a suggested starter manifest or assemble your own. Your choices are saved locally.</p></div></div>
+    <section class="panel cv-planner"><div class="planner-head"><div><span class="eyebrow">02 / WORKSHOP CONFIGURATION</span><h2>Build your Corvette</h2><p class="helper">Create a suggested starter manifest or assemble your own. Export to keep your work after this visit.</p></div></div>
      <div class="cv-settings">
        <label>Ship name<input id="cv-name" class="control" maxlength="80" placeholder="My Corvette" value="${esc(p.name)}"></label>
        <label>Build focus<select id="cv-goal" class="control">${Object.entries(CV.goals).map(([id,g])=>`<option value="${id}" ${p.goal===id?'selected':''}>${esc(g.label)}</option>`).join('')}</select></label>
@@ -398,7 +396,7 @@ function renderCorvette(){
     </div>
    </aside>
   </div>
-  <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Local profiles · No game save access · Not affiliated with Hello Games</span></footer>`;
+  <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
  if(corvetteQuery)applyCorvetteSearch();
 }
 let corvetteQuery='';

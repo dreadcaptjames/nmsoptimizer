@@ -45,8 +45,8 @@ The technology catalogs include named crafted upgrades and procedural module fam
 
 ### Keep and revisit your builds
 
-- Save equipment-specific layouts locally in the browser, including individual Exocraft models.
-- Export and import builds as JSON files.
+- Work with independent equipment layouts and individual Exocraft models during the current visit. Every new page load starts from the default presets.
+- **Export your work as JSON before leaving**, and manually import an exported file when you want to resume a previous build.
 - Use the responsive workbench on desktop and smaller screens.
 - Browse without an account or a connection to the game; the interface and its icons are self-contained.
 
@@ -67,7 +67,7 @@ In particular:
 
 ## Player control and data
 
-ATLAS MAX keeps your saved profiles in your browser's local storage. They are not uploaded to an ATLAS MAX account or online service. JSON export gives you a portable copy of your planning data; clearing browser storage may remove locally saved profiles if you haven't exported them.
+**ATLAS MAX always starts fresh.** Opening or refreshing the page restores the default settings for all six equipment categories; it does not automatically reload a previous build. While the page is open, switching equipment categories retains your changes within that visit. To keep a build between visits, use **Export** to download a JSON file and **Import** to load that file manually later. If you close or refresh the page before exporting, you should expect to start over. Nothing is uploaded to an ATLAS MAX account or game service.
 
 The app's illustrated icons are original, game-inspired interface artwork, not official No Man’s Sky inventory icons.
 
