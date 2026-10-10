@@ -6,3 +6,32 @@
 @media(max-width:1120px){.cv-workspace{grid-template-columns:240px minmax(0,1fr)}.cv-insights{grid-column:2;position:static;max-height:none}.cv-inspector-body{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cv-readiness{margin:0;padding-top:12px}.cv-reference{grid-column:1/-1}.cv-library{max-height:82vh}}
 @media(max-width:850px){.gear-nav{grid-template-columns:repeat(3,minmax(0,1fr))}.gear-btn{flex-direction:row;justify-content:center;padding:10px}.gear-text small{display:none}.cv-workspace{grid-template-columns:minmax(0,1fr)}.cv-library,.cv-insights{grid-column:1;position:static;max-height:none}.cv-library{order:2}.cv-main{order:1}.cv-insights{order:3}.cv-catalog{max-height:490px}.cv-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.gear-btn{gap:5px}.gear-text b{font-size:11px}.cv-settings{padding:4px 12px 14px;gap:10px}.cv-planner .planner-head{padding:17px 12px}.cv-toolbar{padding:0 12px 12px}.cv-toolbar .btn{flex:1}.cv-assignment-note{margin:0 12px 14px}.cv-ship-panel{padding:13px 10px}.cv-blueprint{min-height:265px;padding:5px}.cv-zones{gap:4px;min-height:245px}.cv-zone{padding:7px 3px}.cv-zone h4{font-size:7px}.cv-chip{display:block;text-align:center;font-size:8px}.cv-chip svg{display:none}.cv-chip span{display:block}.cv-chip b{display:block}.cv-validation{padding:15px 12px}.cv-checks{gap:6px}.cv-check{font-size:10px;padding:6px}.cv-inspector-body{display:block}.cv-readiness{margin-top:17px}.cv-metric-word{font-size:13px!important}}
+/* Corvette tech inventory: distinct from exterior construction manifest */
+.cv-tech-planner{margin-top:15px;min-width:0;padding-bottom:15px}
+.cv-tech-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:0 16px 12px}
+.cv-tech-options label{display:flex;flex-direction:column;gap:5px;color:#a4bdc9;font-size:10px;min-width:0}
+.cv-tech-options .control{min-width:0;width:100%}
+.cv-tech-library{margin:0 16px 13px;border:1px solid #324f60;border-radius:8px;background:#132839}
+.cv-tech-library>summary{padding:12px 13px;font-size:11px;cursor:pointer;font-weight:750;color:#cbebea}
+.cv-tech-families{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:0 10px 11px;max-height:290px;overflow:auto}
+.cv-tech-family{border:1px solid #304658;border-radius:7px;padding:8px;font-size:10px;min-width:0}
+.cv-tech-family>label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.cv-tech-family .family-icon{width:24px;height:24px;flex:none}
+.cv-tech-family .family-glyph{width:17px;height:17px}
+.cv-tech-family details{padding-top:7px;color:#97b4c2;font-size:10px}
+.cv-tech-family details summary{cursor:pointer}
+.cv-tech-addon{display:block;margin:7px 0 0 10px;cursor:pointer}
+.cv-tech-toolbar{display:flex;align-items:center;gap:6px;padding:0 16px 12px;flex-wrap:wrap}
+.cv-tech-toolbar>strong{font-size:11px;color:#dfc5ff;margin-right:6px}
+.cv-tech-toolbar .mode{border:1px solid #3b4f61}
+.cv-tech-toolbar .mode.active{border-color:#ad94eb;background:#443563;color:#ead3ff}
+.cv-tech-frame{margin:0 16px 12px}
+.cv-tech-instruction{font-size:10px;color:#a4bbc8;padding:0 16px 7px;line-height:1.55}
+.cv-tech-planner .notice{margin:7px 16px 10px}
+.cv-tech-actions{padding-top:10px}
+.cv-tech-result{display:grid;gap:7px;margin:0 16px 10px;padding:12px;border-radius:10px;border:1px solid #6c518f;background:linear-gradient(145deg,#241c39,#152535);font-size:11px;color:#dfc9f8}
+.cv-tech-result>span{color:#a9cbd0}
+.cv-tech-result p{color:#a99bbf;margin:4px 0 0;font-size:10px;line-height:1.5}
+.cv-tech-sc-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px;border-top:1px solid #51416d;font-size:10px}
+.cv-tech-sc-item strong{white-space:nowrap;color:#e4c5ff}
+@media(max-width:720px){.cv-tech-options{grid-template-columns:repeat(2,minmax(0,1fr))}.cv-tech-families{grid-template-columns:minmax(0,1fr)}.cv-tech-toolbar{gap:4px}.cv-tech-toolbar>strong{width:100%;margin:0 0 4px}.cv-tech-toolbar .mode{font-size:10px;padding:8px 6px}}

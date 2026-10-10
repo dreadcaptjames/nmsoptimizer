@@ -6,6 +6,13 @@ const ICONS=window.ATLAS_ICONS;
 const CV=window.ATLAS_CORVETTE;
 const STORAGE='atlas-max-v1';
 const gearKeys=Object.keys(DATA.gear);
+// Corvette structural parts are NOT technology tiles. Its independent matrix
+// uses only shared ship technologies; construction-generated systems must be
+// verified against the player's actual Corvette inventory in-game.
+const cvSharedFamilies=['launch','pulse','hyperdrive','shield','photon','beam','positron','infra','cyclotron','rockets','scanners','utility'];
+const cvTechGear={...DATA.gear.starship,name:'Corvette technology',
+  families:Object.fromEntries(cvSharedFamilies.map(id=>[id,DATA.gear.starship.families[id]]).filter(x=>x[1]))};
+let cvTechMode='charge';
 const app=document.getElementById('app');
 let editing='move',selectedCell=null,activeTile=null,toastTimer=null;
 let technologyQuery='',configOpen=false,insightsOpen=false,dragFrom=null;
@@ -36,15 +43,26 @@ function validAddons(gear,raw,vehicle){
   }
   return out;
 }
+function corvetteTechProfile(raw,cls='S'){
+  const profile=normalizeProfile('starship',raw||null);
+  profile.cls=cls;
+  if(!raw){profile.cols=10;profile.rows=6;profile.sc=[];profile.scExample=false;profile.layout=null;profile.dirty=false;}
+  profile.enabled=profile.enabled.filter(id=>cvTechGear.families[id]);
+  profile.addons=validAddons(cvTechGear,profile.addons,profile.vehicle);
+  if(profile.layout&&profile.layout.tiles.some(t=>!cvTechGear.families[t.family])){profile.layout=null;profile.dirty=false;}
+  profile.sc=uniqueValid(profile.sc,profile.cols*profile.rows).filter(x=>!profile.blocked.includes(x)).slice(0,4);
+  profile.scExample=false;
+  return profile;
+}
 function defaultProfile(key){
-  if(key==='corvette')return CV.defaults();
+  if(key==='corvette')return {...CV.defaults(),tech:corvetteTechProfile(null,'S')};
   const gear=DATA.gear[key],goal=Object.keys(gear.goals)[0],cls='S',vehicle=gear.vehicleOptions?Object.keys(gear.vehicleOptions)[0]:null;
   const cols=key==='exosuit'?10:8,rows=key==='exosuit'?6:5;
   return {name:'',cls,goal,vehicle,cols,rows,sc:demoSC(key,cls,cols,rows),blocked:[],scExample:true,enabled:goalDefaults(gear,goal,vehicle),addons:defaultAddons(gear,vehicle),catalogVersion:2,depth:3,target:'S',layout:null,dirty:false,...(vehicle?{savedVehicles:{}}:{})};
 }
 function initialState(){return {version:1,current:'starship',equipment:Object.fromEntries(gearKeys.map(k=>[k,defaultProfile(k)]))};}
 function normalizeProfile(key,raw){
-  if(key==='corvette')return CV.normalize(raw);
+  if(key==='corvette'){const profile=CV.normalize(raw);profile.tech=corvetteTechProfile(raw?.tech,profile.cls);return profile;}
   const base=defaultProfile(key),gear=DATA.gear[key];
   if(!raw||typeof raw!=='object')return base;
   const p={...base};
@@ -219,7 +237,7 @@ function render(){
       <main class="workbench">
         <div class="metrics" aria-label="Technology grid metrics">
           <div class="metric"><span class="metric-icon" aria-hidden="true">▦</span><div><div class="metric-name">OPEN SLOTS</div><div class="metric-value">${openSlots}<span>/${profile.cols*profile.rows}</span></div></div></div>
-          <div class="metric purple"><span class="metric-icon" aria-hidden="true">✦</span><div><div class="metric-name">SUPERCHARGED</div><div class="metric-value">${profSC.length}<span>/${scCount}</span></div></div></div>
+          <div class="metric purple"><span class="metric-icon" aria-hidden="true">✦</span><div><div class="metric-name">SC PRIORITY</div><div class="metric-value">${stats?stats.effectiveSC:0}<span>/${profSC.length} useful</span></div></div></div>
           <div class="metric"><span class="metric-icon" aria-hidden="true">⌁</span><div><div class="metric-name">ADJACENCY</div><div class="metric-value">${stats?stats.connections:'—'}<span> links</span></div></div></div>
           <div class="metric score"><span class="metric-icon" aria-hidden="true">◈</span><div><div class="metric-name">PLAN SCORE</div><div class="metric-value">${stats?Math.round(stats.score):'—'}</div></div></div>
         </div>
@@ -234,15 +252,15 @@ function render(){
           <div class="hint-line">${editing==='move'?'↔ Drag a module or select two slots to swap. Tap a module to inspect it.':editing==='charge'?'✦ Select a position to add or remove a supercharged marker.':'▧ Select slots to lock or unlock their positions.'} <span>CORE = base · U1–U3 = rolled · TECH = crafted</span></div>
           ${profile.scExample?`<div class="notice warning"><strong>Example supercharged positions.</strong> These aren't your real slot coordinates. Choose <b>Clear SC</b> and mark your own for a personalized build.</div>`:''}
           ${scMismatched?`<div class="notice warning"><strong>Slot-count check:</strong> ${profSC.length} supercharged positions marked; ${scCount} expected for this equipment setting. Verify your inventory.</div>`:''}
-          ${profile.layout&&profile.dirty?`<div class="notice warning"><strong>Review changes.</strong> Your settings or placement changed. Optimize again when you're ready for a fresh result.</div>`:''}
+          ${profile.layout&&profile.dirty?`<div class="notice warning"><strong>Supercharged placement may be out of date.</strong> Your slot positions, focus, or module arrangement changed. Select <b>Optimize layout</b> again to assign the strongest candidates to your purple slots. Nothing rearranges automatically.</div>`:''}
           ${hasSkipped?`<div class="notice warning"><strong>${profile.layout.skipped.length} requested technologies didn't fit.</strong> ${esc(profile.layout.skipped.slice(0,5).map(t=>t.label).join(', '))}${profile.layout.skipped.length>5?' …':''}. Unlock slots, enlarge the grid or reduce selected technology.</div>`:''}
           <div class="toolbar-bottom"><div class="action-row"><button class="btn primary" data-action="optimize">✧ Optimize layout <span>↗</span></button><button class="btn" data-action="copy" ${!profile.layout?'disabled':''}>⧉ Copy build</button></div><div class="action-row"><button class="btn quiet" data-action="clear-layout">Clear layout</button><button class="btn quiet warn" data-action="reset">Reset</button></div></div>
-          <div class="score-explainer">Planning score is a relative heuristic for compatible adjacency and supercharged placement—not actual in-game damage, range or shield statistics.</div>
+          <div class="score-explainer">Supercharged slots now receive priority over minor adjacency gains. Match your real purple positions, then select Optimize layout. SC priority and planning score are relative heuristics—not actual in-game damage, range, or shield statistics. U1 is assumed to be your best module roll; compare real rolls in-game.</div>
         </section>
         <details class="panel guide"><summary><span>◈ <strong>How to use ATLAS MAX</strong></span><span>3-step quick guide <b>⌄</b></span></summary><div class="guide-steps"><div class="step"><span class="step-num">01 / MATCH</span><strong>Recreate your inventory</strong><p>Set dimensions, lock missing slots, and mark real supercharged positions.</p></div><div class="step"><span class="step-num">02 / PRIORITIZE</span><strong>Choose tech & blueprints</strong><p>Select the technology families and crafted upgrades appropriate to your equipment.</p></div><div class="step"><span class="step-num">03 / OPTIMIZE</span><strong>Apply your arrangement</strong><p>Generate a layout and transfer the placement to your in-game inventory.</p></div></div><div class="guide-footer">Reference material: ${DATA.sources.map(s=>`<a target="_blank" rel="noopener noreferrer" href="${esc(s.url)}">${esc(s.name)} ↗</a>`).join('')}.</div></details>
       </main>
       <aside class="panel insight-panel ${insightsOpen?'is-open':''}"><div class="panel-heading"><div><div class="eyebrow">04 / LIVE ANALYSIS</div><h3>Build intelligence</h3></div><button class="collapse-button" data-action="panel" data-panel="insights" aria-expanded="${insightsOpen}" aria-controls="insights-body"><span class="when-closed">Show ⌄</span><span class="when-open">Hide ⌃</span></button></div>
-        <div id="insights-body" class="insights-body"><section class="inspector-card"><div class="inspector-kicker">SELECTED MODULE <span>◉ LIVE</span></div>${activeTile?renderInspector(activeTile,gear):`<div class="inspect-empty"><span class="inspect-placeholder">${ICONS.render(gear.icon,'gear-glyph')}</span><strong>No module selected</strong><p>${profile.layout?'Select an installed tile to view its role and system details.':'Generate a layout to inspect technology placement and adjacency.'}</p></div>`}</section>
+        <div id="insights-body" class="insights-body"><section class="inspector-card"><div class="inspector-kicker">SELECTED MODULE <span>◉ LIVE</span></div>${activeTile?renderInspector(activeTile,gear,profile,selectedCell):`<div class="inspect-empty"><span class="inspect-placeholder">${ICONS.render(gear.icon,'gear-glyph')}</span><strong>No module selected</strong><p>${profile.layout?'Select an installed tile to view its role and system details.':'Generate a layout to inspect technology placement and adjacency.'}</p></div>`}</section>
           <section class="insight-metrics"><div class="insight-metric"><span>Installed / capacity</span><strong>${tilesInGrid} <small>/ ${openSlots}</small></strong></div><div class="progress-track"><span style="width:${pct}%"></span></div><div class="insight-metric"><span>Goal preset</span><strong>${esc(goal.label)}</strong></div><div class="insight-metric"><span>Upgrade target</span><strong>${esc(profile.target)}-class modules</strong></div></section>
           <section class="briefing"><div class="catalog-head"><h3>Priority briefing</h3><span>✧</span></div><p class="intro">${esc(goal.tip)}</p>${profile.layout?renderBriefing(gear,profile,sorted,stats):`<div class="empty-state"><span>✧</span><p><strong>Your planner is ready.</strong> Nothing has been generated yet. No build is generated automatically; click Optimize layout when ready.</p></div>`}<div class="notice"><strong>Equipment note</strong><p>${esc(gear.note)}</p></div></section>
           <details class="technology-plan"><summary><span>Technology plan <small>${sorted.length} families</small></span><span>⌄</span></summary><div class="plan-content">${sorted.length?sorted.map((id,i)=>renderFamilyCard(id,gear,profile,i)).join(''):'<div class="empty-state">Enable a technology family to begin.</div>'}</div></details>
@@ -253,6 +271,27 @@ function render(){
   if(technologyQuery)applySearch();
 }
 function corvetteStatus(p,stats){return !stats.exterior&&!stats.interior?'No build yet':p.generated&&!p.dirty?'Starter plan ready':p.generated?'Customized plan':'Custom draft';}
+function renderCorvetteTech(p){
+ const t=p.tech,scCount=wantedSC('starship',p.cls),stat=t.layout?SOLVER.summarize(t.layout,cvTechGear,t):null;
+ const active=Object.entries(cvTechGear.families);
+ const groups=active.map(([id,f])=>{
+  const addons=(f.addons||[]).filter(a=>canUse(a,t.vehicle));
+  return `<div class="cv-tech-family"><label><input type="checkbox" data-cv-tech-family="${id}" ${t.enabled.includes(id)?'checked':''}> <span class="family-icon ${esc(f.color)}">${ICONS.render(f.icon,'family-glyph')}</span> ${esc(f.name)}</label>${addons.length?`<details><summary>Blueprints (${addons.filter(a=>t.addons.includes(id+':'+a.id)).length}/${addons.length})</summary>${addons.map(a=>`<label class="cv-tech-addon"><input type="checkbox" data-cv-tech-addon="${id}:${a.id}" ${t.addons.includes(id+':'+a.id)?'checked':''}> ${esc(a.name)}</label>`).join('')}</details>`:''}</div>`;
+ }).join('');
+ const assignments=stat?.scPlacements.map(x=>`<div class="cv-tech-sc-item"><span>R${Math.floor(x.position/t.cols)+1} C${x.position%t.cols+1} · ${esc(x.label)}</span><strong>${x.priority>0?'+'+Math.round(x.priority):'no SC benefit'}</strong></div>`).join('')||'';
+ return `<section class="panel cv-tech-planner" aria-label="Corvette technology grid and supercharged optimizer">
+  <div class="planner-head"><div><span class="eyebrow">05 / SUPERCHARGED SYSTEMS</span><h2>Corvette technology optimizer</h2><p class="helper">Separate from exterior construction. Match the purple coordinates in your <strong>actual Corvette technology inventory</strong>; structural parts aren't automatically represented here.</p></div></div>
+  <div class="cv-tech-options"><label>Technology goal<select id="cv-tech-goal" class="control">${Object.entries(cvTechGear.goals).map(([id,g])=>`<option value="${id}" ${t.goal===id?'selected':''}>${esc(g.label)}</option>`).join('')}</select></label><label>Upgrade modules<select id="cv-tech-depth" class="control">${[1,2,3].map(n=>`<option value="${n}" ${t.depth===n?'selected':''}>${n} per family</option>`).join('')}</select></label><label>Grid columns<select id="cv-tech-cols" class="control">${[6,7,8,9,10].map(n=>`<option value="${n}" ${t.cols===n?'selected':''}>${n}</option>`).join('')}</select></label><label>Grid rows<select id="cv-tech-rows" class="control">${[3,4,5,6].map(n=>`<option value="${n}" ${t.rows===n?'selected':''}>${n}</option>`).join('')}</select></label></div>
+  <details class="cv-tech-library"><summary>Choose shared starship technology & blueprints (${t.enabled.length} families)</summary><div class="cv-tech-families">${groups}</div></details>
+  <div class="cv-tech-toolbar"><strong>SC positions: ${t.sc.length}/${scCount}</strong><button type="button" class="mode ${cvTechMode==='charge'?'active':''}" data-action="cv-tech-mode" data-mode="charge">✦ Mark SC</button><button type="button" class="mode ${cvTechMode==='move'?'active':''}" data-action="cv-tech-mode" data-mode="move">⤧ Move tech</button><button type="button" class="mode ${cvTechMode==='lock'?'active':''}" data-action="cv-tech-mode" data-mode="lock">▧ Lock slots</button><button type="button" class="mode subtle" data-action="cv-tech-clear-sc">Clear SC</button></div>
+  <div class="grid-frame cv-tech-frame"><div class="grid-utility"><span><span class="live-dot"></span> CORVETTE TECH MATRIX</span><span>${t.cols} × ${t.rows} · ${t.sc.length} marked SC</span></div><div class="grid-scroll"><div class="tech-grid" style="--columns:${t.cols}" role="group" aria-label="Corvette technology inventory">${Array.from({length:t.cols*t.rows},(_,i)=>renderCell(i,cvTechGear,t,'cv-tech-cell')).join('')}</div></div></div>
+  <div class="cv-tech-instruction">${cvTechMode==='charge'?'Tap the exact purple slot positions seen in your Corvette inventory.':cvTechMode==='lock'?'Mark positions that are not unlocked.':'Select a technology and then its destination, or drag a tile to another cell.'} Changes do not automatically rerun optimization.</div>
+  ${t.layout&&t.dirty?'<div class="notice warning"><strong>SC positions or modules changed.</strong> Select Optimize Corvette tech again to rebuild the placement.</div>':''}
+  ${!t.sc.length?'<div class="notice warning"><strong>No supercharged slots marked yet.</strong> The optimizer can still group adjacent technology, but cannot prioritize purple slots until you mark real positions.</div>':''}
+  <div class="cv-tech-toolbar cv-tech-actions"><button type="button" class="btn primary" data-action="cv-tech-optimize">✧ Optimize Corvette tech ↗</button><button type="button" class="btn quiet" data-action="cv-tech-clear-layout">Clear tech layout</button></div>
+  ${stat?`<div class="cv-tech-result"><strong>✦ SC impact: +${Math.round(stat.scScore)} planning points · ${stat.effectiveSC}/${t.sc.length} useful purple slots</strong><span>Adjacency: +${Math.round(stat.adjacencyScore)} · ${stat.connections} links</span>${assignments||'<p>Mark SC slots to receive placement recommendations.</p>'}<p>These are relative planning scores, not in-game percentages or DPS. U1 assumes your strongest roll. Verify construction-generated technology and actual Corvette stats in-game.</p></div>`:''}
+ </section>`;
+}
 function renderCorvette(){
  const key='corvette',p=state.equipment.corvette,stats=CV.assess(p),goal=CV.goals[p.goal];
  const active=CV.parts.filter(part=>p.counts[part.id]);
@@ -305,6 +344,7 @@ function renderCorvette(){
       <div class="notice ${stats.ready?'':'warning'}">${stats.ready?'<strong>All required module groups present.</strong> Physical placement, snap connections, limits, and performance must still be verified in-game.':`<strong>Missing required groups:</strong> ${esc(stats.missing.map(x=>x[1]).join(', '))}.`}</div>
      </div>
     </section>
+    ${renderCorvetteTech(p)}
    </main>
    <aside class="panel cv-insights"><div class="panel-heading"><div><span class="eyebrow">04 / ASSEMBLY INTELLIGENCE</span><h3>Workshop inspector</h3></div></div>
     <div class="cv-inspector-body">${inspected?`<div class="inspector-card"><div class="inspector-kicker">SELECTED MODULE</div><div class="inspector-title"><span class="family-icon mint">${ICONS.render(inspected.icon,'family-glyph')}</span><div><strong>${esc(inspected.name)}</strong><small>${esc(inspected.section)}</small></div></div><p>${esc(inspected.description)}</p><div class="inspector-note">${esc(inspected.kind==='interior'?'Interior furnishing — not included in exterior structural count.':'Exterior module — verify availability and attachment rules in the game.')}</div><label class="cv-zone-select">Planning zone<select class="control" data-cv-zone="${esc(inspected.id)}">${['fore','mid','aft'].map(z=>`<option value="${z}" ${(p.zones[inspected.id]||inspected.zone)===z?'selected':''}>${zoneLabel[z]}</option>`).join('')}</select></label></div>`:`<div class="inspect-empty"><span class="inspect-placeholder">${ICONS.render('corvette','gear-glyph')}</span><strong>Nothing selected</strong><p>Choose a module in the catalog to see its details and edit its planned position.</p></div>`}
@@ -335,14 +375,43 @@ function corvetteMutate(partId,increment){
  if(next)p.counts[partId]=next;else delete p.counts[partId];
  p.selected=partId;p.dirty=!!p.generated;save();render();
 }
+function corvetteTechChanged(){const p=state.equipment.corvette.tech;p.dirty=!!p.layout;save();render();}
+function handleCorvetteTechCell(pos){
+ const t=state.equipment.corvette.tech;
+ if(!Number.isInteger(pos)||pos<0||pos>=t.cols*t.rows)return;
+ if(cvTechMode==='charge'){
+  if(t.blocked.includes(pos)){toast('Unlock this position first.',true);return;}
+  if(t.sc.includes(pos))t.sc=t.sc.filter(i=>i!==pos);
+  else {if(t.sc.length>=wantedSC('starship',t.cls)){toast('Unmark a supercharged position first.',true);return;}t.sc.push(pos);}
+  selectedCell=null;activeTile=null;corvetteTechChanged();return;
+ }
+ if(cvTechMode==='lock'){
+  if(t.blocked.includes(pos))t.blocked=t.blocked.filter(i=>i!==pos);
+  else {t.blocked.push(pos);t.sc=t.sc.filter(i=>i!==pos);if(t.layout)t.layout.map[pos]=-1;}
+  selectedCell=null;activeTile=null;corvetteTechChanged();return;
+ }
+ if(t.blocked.includes(pos)){toast('This position is locked.',true);return;}
+ if(!t.layout){toast('Select Optimize Corvette tech first.');return;}
+ if(selectedCell===null){if(t.layout.map[pos]<0)return;selectedCell=pos;activeTile=t.layout.tiles[t.layout.map[pos]];render();return;}
+ if(selectedCell!==pos){[t.layout.map[selectedCell],t.layout.map[pos]]=[t.layout.map[pos],t.layout.map[selectedCell]];t.dirty=true;}
+ selectedCell=null;activeTile=t.layout.map[pos]>=0?t.layout.tiles[t.layout.map[pos]]:null;save();render();
+}
 function handleCorvetteClick(action,d){const p=state.equipment.corvette;
+ if(action==='cv-tech-mode'){cvTechMode=d.mode;selectedCell=null;activeTile=null;render();return;}
+ if(action==='cv-tech-cell'){handleCorvetteTechCell(Number(d.cell));return;}
+ if(action==='cv-tech-clear-sc'){p.tech.sc=[];corvetteTechChanged();return;}
+ if(action==='cv-tech-clear-layout'){p.tech.layout=null;p.tech.dirty=false;selectedCell=null;activeTile=null;save();render();return;}
+ if(action==='cv-tech-optimize'){
+  try{p.tech.layout=SOLVER.solve({gear:cvTechGear,profile:p.tech});p.tech.dirty=false;cvTechMode='move';selectedCell=null;activeTile=null;save();render();toast('Corvette tech optimized against your marked supercharged positions.');}
+  catch(e){toast(e.message||'Could not optimize Corvette technology.',true);}return;
+ }
  if(action==='cv-plus'||action==='cv-minus'){corvetteMutate(d.part,action==='cv-plus'?1:-1);return;}
  if(action==='cv-select'){if(CV.byId[d.part]){p.selected=d.part;save();render();}return;}
  if(action==='cv-generate'){
   if(Object.keys(p.counts).length && !window.confirm('Replace this Corvette manifest with a new starter plan? Your current module quantities will be replaced.'))return;
   p.counts=CV.generate(p.goal,p.style);p.zones={};p.selected=null;p.generated=true;p.dirty=false;save();render();toast('Starter plan generated. Verify all physical connections in the in-game workshop.');return;
  }
- if(action==='cv-reset'){if(window.confirm('Reset the Corvette manifest and settings?')){state.equipment.corvette=CV.defaults();save();render();toast('Corvette profile reset.');}return;}
+ if(action==='cv-reset'){if(window.confirm('Reset the Corvette manifest and settings?')){state.equipment.corvette=defaultProfile('corvette');cvTechMode='charge';selectedCell=null;activeTile=null;save();render();toast('Corvette profile reset.');}return;}
  if(action==='cv-copy'){
   const assessment=CV.assess(p);const partList=CV.parts.filter(x=>p.counts[x.id]).map(x=>`${p.counts[x.id]} × ${x.name} [${p.zones[x.id]||x.zone}, ${x.kind}]`).join('\n');
   const txt=`ATLAS MAX • Corvette: ${p.name||'My Corvette'}\nFocus: ${CV.goals[p.goal].label} | Class: ${p.cls} | Style: ${p.style}\nExterior modules: ${assessment.exterior}; Interior furnishings: ${assessment.interior}\nRequired core groups: ${CV.required.length-assessment.missing.length}/${CV.required.length}\n${assessment.missing.length?'Missing: '+assessment.missing.map(x=>x[1]).join(', '):'All required part groups represented'}\n\n${partList||'(No modules selected)'}\n\nConceptual manifest only; verify assembly, availability and real stats in No Man’s Sky.`;
@@ -351,25 +420,37 @@ function handleCorvetteClick(action,d){const p=state.equipment.corvette;
 }
 async function copyPlainText(txt,done){try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(txt);else{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();if(!document.execCommand('copy'))throw Error('Unsupported clipboard');t.remove();}toast(done);}catch(e){toast('Clipboard unavailable; use Export to save all profiles.',true);}}
 
-function renderCell(i,gear,profile){
+function renderCell(i,gear,profile,cellAction='cell'){
   const locked=profile.blocked.includes(i),sc=profile.sc.includes(i);
+  const cellEditMode=cellAction==='cv-tech-cell'?cvTechMode:editing;
   const tileIndex=profile.layout?profile.layout.map[i]:-1;
   const tile=tileIndex>=0?profile.layout.tiles[tileIndex]:null;
   const fam=tile?gear.families[tile.family]:null;
+  const priority=sc&&tile?SOLVER.scValue(tile,gear,gear.goals[profile.goal]):0;
   const text=locked?'LOCK':tile?(tile.role==='core'?'CORE':tile.role==='crafted'?'TECH':'U'+tile.sequence):(sc?'SC':'+');
   const name=locked?'Unavailable':tile?tile.label:sc?'Supercharged':'Empty';
   const subtitle=tile?(tile.role==='core'?'Core technology':tile.role==='crafted'?'Crafted blueprint':`Upgrade ${tile.sequence}`):'';
   const edges=adjacencyFor(i,gear,profile,tile);
   const selectedFamily=activeTile&&activeTile.family===tile?.family;
-  return `<button type="button" class="cell ${locked?'locked':''} ${sc?'sc':''} ${tile?'tile '+fam.color:''} ${selectedCell===i?'selected':''} ${selectedFamily?'same-family':''} ${activeTile&&tile&&!selectedFamily?'deemphasized':''}" data-action="cell" data-cell="${i}" ${tile&&editing==='move'?'draggable="true"':''} aria-label="Row ${Math.floor(i/profile.cols)+1}, column ${i%profile.cols+1}: ${esc(name)}${sc?' (supercharged)':''}${locked?' (locked)':''}" title="${esc(name)}${tile?' — '+esc(subtitle):''}">${edges.map(side=>`<span class="adjacency-edge ${side}" aria-hidden="true"></span>`).join('')}${tile?`<span class="slot-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'slot-glyph')}</span><span class="cell-name">${esc(tile.role==='crafted'?tile.label:fam.name)}</span><span class="cell-rank">${esc(text)}</span>`:locked?`<span class="slot-icon lock-icon">${ICONS.render('lock','slot-glyph')}</span><span class="cell-rank">LOCKED</span>`:sc?`<span class="slot-icon sc-empty-icon">${ICONS.render('spark','slot-glyph')}</span><span class="cell-rank">SC SLOT</span>`:`<span class="cell-code">+</span><span class="number">${String(i+1).padStart(2,'0')}</span>`}</button>`;
+  const scHint=sc&&tile?(priority>0?` — SC priority +${Math.round(priority)} planning points`:' — no modeled SC benefit'):'';
+  return `<button type="button" class="cell ${locked?'locked':''} ${sc?'sc':''} ${sc&&tile?(priority>0?'sc-effective':'sc-low'):''} ${tile?'tile '+fam.color:''} ${selectedCell===i?'selected':''} ${selectedFamily?'same-family':''} ${activeTile&&tile&&!selectedFamily?'deemphasized':''}" data-action="${cellAction}" data-cell="${i}" ${tile&&cellEditMode==='move'?'draggable="true"':''} aria-label="Row ${Math.floor(i/profile.cols)+1}, column ${i%profile.cols+1}: ${esc(name)}${sc?' (supercharged)':''}${locked?' (locked)':''}${esc(scHint)}" title="${esc(name)}${tile?' — '+esc(subtitle):''}${esc(scHint)}">${edges.map(side=>`<span class="adjacency-edge ${side}" aria-hidden="true"></span>`).join('')}${tile?`<span class="slot-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'slot-glyph')}</span><span class="cell-name">${esc(tile.role==='crafted'?tile.label:fam.name)}</span><span class="cell-rank">${esc(text)}</span>${sc&&priority>0?`<span class="sc-impact" aria-hidden="true">✦ +${Math.round(priority)}</span>`:''}`:locked?`<span class="slot-icon lock-icon">${ICONS.render('lock','slot-glyph')}</span><span class="cell-rank">LOCKED</span>`:sc?`<span class="slot-icon sc-empty-icon">${ICONS.render('spark','slot-glyph')}</span><span class="cell-rank">SC SLOT</span>`:`<span class="cell-code">+</span><span class="number">${String(i+1).padStart(2,'0')}</span>`}</button>`;
 }
-function renderInspector(tile,gear){
+function renderInspector(tile,gear,profile,selectedPos){
   const fam=gear.families[tile.family];if(!fam)return'';
   const role=tile.role==='core'?'Base technology':tile.role==='crafted'?'Crafted blueprint':`Rolled upgrade / slot ${tile.sequence}`;
-  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'family-glyph')}</span><div><strong>${esc(tile.label)}</strong><small>${esc(role)}</small></div></div><p>${esc(fam.why)}</p><div class="inspector-note">${tile.role==='upgrade'&&tile.sequence===1?'U1 represents your best module roll, not a guaranteed stat value. ':'Use Move tech to select another slot or drag this module to relocate it.'}</div></div>`;
+  const value=SOLVER.scValue(tile,gear,gear.goals[profile.goal]);
+  const onSC=selectedPos!==null&&profile.sc.includes(selectedPos);
+  const scAdvice=value>0?(onSC?`This technology is benefiting from the marked supercharged position (+${Math.round(value)} relative planning points).`:`Potential SC priority: +${Math.round(value)} relative planning points. The optimizer weighs this against other SC candidates and adjacency.`):'This technology has no modeled supercharged priority. Reserve purple slots for performance technology where possible.';
+  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'family-glyph')}</span><div><strong>${esc(tile.label)}</strong><small>${esc(role)}</small></div></div><p>${esc(fam.why)}</p><div class="inspector-sc"><strong>✦ Supercharged evaluation</strong><span>${esc(scAdvice)}</span></div><div class="inspector-note">${tile.role==='upgrade'&&tile.sequence===1?'U1 represents your best module roll, not a guaranteed stat value. ':'Use Move tech to select another slot or drag this module to relocate it.'}</div></div>`;
 }
 function renderBriefing(gear,profile,sorted,stats){
-  return `<div class="priority-item"><span class="number-badge">✧</span><div><h4>${stats.usedSC}/${profile.sc.length} marked supercharged positions filled</h4><p>Priority weighted to your ${esc(gear.goals[profile.goal].label.toLowerCase())} goal, using your current marked positions.</p></div></div>
+  const ranked=stats.scPlacements.slice().sort((a,b)=>b.priority-a.priority);
+  const placements=ranked.map(item=>`<li class="sc-assignment ${item.priority>0?'is-useful':'is-filler'}"><span class="sc-coord">R${Math.floor(item.position/profile.cols)+1} C${item.position%profile.cols+1}</span><span>${esc(item.label)}${item.priority<=0?' · no modeled SC benefit':''}</span><b>${item.priority>0?'+'+Math.round(item.priority):'—'}</b></li>`).join('');
+  return `<div class="sc-analysis" aria-label="Supercharged optimization breakdown"><div class="sc-analysis-head"><strong>✦ Supercharged assignments</strong><span>${stats.effectiveSC}/${profile.sc.length} useful</span></div>
+    <div class="sc-score-row"><span>SC priority</span><strong>+${Math.round(stats.scScore)}</strong><span>Adjacency</span><strong>+${Math.round(stats.adjacencyScore)}</strong></div>
+    ${placements?`<ul class="sc-assignment-list">${placements}</ul>`:`<p class="sc-analysis-empty">${profile.sc.length?'No technology occupies your marked SC slots.':'Mark your real purple slots and select Optimize layout to prioritize them.'}</p>`}
+    <p class="sc-disclaimer">Relative planning points, not actual in-game stat bonuses. U1 assumes your strongest rolled upgrade.</p></div>
+  <div class="priority-item"><span class="number-badge">✧</span><div><h4>${stats.effectiveSC}/${profile.sc.length} supercharged positions with performance tech</h4><p>Prioritized for your ${esc(gear.goals[profile.goal].label.toLowerCase())} goal. Only marked positions can receive these bonuses.</p></div></div>
   <div class="priority-item"><span class="number-badge">⌗</span><div><h4>${stats.connections} same-family adjacency links</h4><p>Only side-by-side technology of the same supported family contributes to this count, not diagonals.</p></div></div>
   ${sorted.slice(0,3).map((id,i)=>`<div class="priority-item"><span class="number-badge">${i+1}</span><div><h4>${esc(gear.families[id].name)}</h4><p>${esc(gear.families[id].next)}</p></div></div>`).join('')}
   <div class="notice">${profile.target==='X'?'<strong>X-class reminder:</strong> X-class rolls vary dramatically. A good S-class module can outperform a poor X-class roll.':'<strong>S-class reminder:</strong> S-class is a reliable target, but compare actual stats rather than assuming every roll is identical.'}</div>`;
@@ -436,7 +517,9 @@ function buildSummary(){const{gear,profile}=context();if(!profile.layout)return 
     } rows.push(cells.join(' '));
   }
   const crafted=profile.layout.tiles.filter(t=>t.role==='crafted').map(t=>t.label);
-  return `ATLAS MAX • ${profile.name||gear.name}\nEquipment: ${gear.name} | Class: ${profile.cls}\nFocus: ${gear.goals[profile.goal].label} | Target: ${profile.target} class\nTechnology: ${sorted.map(id=>gear.families[id].name).join(', ')}\nPlanning score: ${Math.round(stats.score)} (heuristic, NOT in-game stats)\nAdjacency links: ${stats.connections} | SC tiles used: ${stats.usedSC}/${profile.sc.length}\n${profile.scExample?'WARNING: Example SC positions — not personalized to a game save.\n':''}* = supercharged slot\n${rows.join('\n')}\n\nFan-made planner. Verify the arrangement and technology stats in No Man's Sky.`;
+  return `ATLAS MAX • ${profile.name||gear.name}\nEquipment: ${gear.name} | Class: ${profile.cls}\nFocus: ${gear.goals[profile.goal].label} | Target: ${profile.target} class\nTechnology: ${sorted.map(id=>gear.families[id].name).join(', ')}\nPlanning score: ${Math.round(stats.score)} (heuristic, NOT in-game stats)
+SC priority: +${Math.round(stats.scScore)} planning points; ${stats.effectiveSC}/${profile.sc.length} meaningful SC placements
+SC assignments: ${stats.scPlacements.map(x=>`R${Math.floor(x.position/profile.cols)+1}C${x.position%profile.cols+1} ${x.label} (+${Math.round(x.priority)})`).join(' | ') || '(none)'}\nAdjacency links: ${stats.connections} | SC tiles used: ${stats.usedSC}/${profile.sc.length}\n${profile.scExample?'WARNING: Example SC positions — not personalized to a game save.\n':''}* = supercharged slot\n${rows.join('\n')}\n\nFan-made planner. Verify the arrangement and technology stats in No Man's Sky.`;
 }
 async function copySummary(){const summary=buildSummary();if(!summary)return;
   try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(summary);}else{
@@ -477,8 +560,25 @@ app.addEventListener('change',event=>{
     const p=state.equipment.corvette;
     if(t.id==='cv-goal'&&CV.goals[t.value]){p.goal=t.value;save();render();return;}
     if(t.id==='cv-style'&&['Titan','Ambassador','Thunderbird','Mixed'].includes(t.value)){p.style=t.value;save();render();return;}
-    if(t.id==='cv-class'&&['C','B','A','S'].includes(t.value)){p.cls=t.value;save();render();return;}
+    if(t.id==='cv-class'&&['C','B','A','S'].includes(t.value)){p.cls=t.value;p.tech.cls=t.value;p.tech.dirty=!!p.tech.layout;save();render();return;}
     if(t.id==='cv-name'){p.name=t.value.trim().slice(0,80);save();render();return;}
+    if(t.id==='cv-tech-goal'&&cvTechGear.goals[t.value]){p.tech.goal=t.value;p.tech.enabled=goalDefaults(cvTechGear,t.value);corvetteTechChanged();return;}
+    if(t.id==='cv-tech-depth'){p.tech.depth=clamp(t.value,1,3);corvetteTechChanged();return;}
+    if(t.id==='cv-tech-cols'||t.id==='cv-tech-rows'){
+      if(t.id==='cv-tech-cols')p.tech.cols=clamp(t.value,6,10);else p.tech.rows=clamp(t.value,3,6);
+      p.tech.layout=null;p.tech.dirty=false;p.tech.blocked=[];p.tech.sc=[];selectedCell=null;activeTile=null;save();render();return;
+    }
+    if(t.dataset?.cvTechFamily){const id=t.dataset.cvTechFamily;if(!cvTechGear.families[id])return;
+      if(t.checked&&!p.tech.enabled.includes(id))p.tech.enabled.push(id);
+      if(!t.checked)p.tech.enabled=p.tech.enabled.filter(x=>x!==id);
+      corvetteTechChanged();return;
+    }
+    if(t.dataset?.cvTechAddon){const token=t.dataset.cvTechAddon;const [id,addonId]=token.split(':');
+      if(!(cvTechGear.families[id]?.addons||[]).some(a=>a.id===addonId))return;
+      if(t.checked&&!p.tech.addons.includes(token))p.tech.addons.push(token);
+      if(!t.checked)p.tech.addons=p.tech.addons.filter(x=>x!==token);
+      corvetteTechChanged();return;
+    }
     if(t.dataset?.cvZone&&CV.byId[t.dataset.cvZone]&&['fore','mid','aft'].includes(t.value)){p.zones[t.dataset.cvZone]=t.value;save();render();return;}
     return;
   }
@@ -564,8 +664,11 @@ app.addEventListener('input',event=>{
 });
 function dragCell(event){const cell=event.target.closest?.('.cell[data-cell]');return cell?Number(cell.dataset.cell):null;}
 app.addEventListener('dragstart',event=>{
-  const {profile}=context();const cell=dragCell(event);
-  if(cell===null||editing!=='move'||!profile.layout||profile.layout.map[cell]<0){event.preventDefault();return;}
+  const {key,profile:ordinary}=context();
+  const profile=key==='corvette'?state.equipment.corvette.tech:ordinary;
+  const mode=key==='corvette'?cvTechMode:editing;
+  const cell=dragCell(event);
+  if(cell===null||mode!=='move'||!profile.layout||profile.layout.map[cell]<0){event.preventDefault();return;}
   dragFrom=cell;
   event.dataTransfer?.setData('text/plain',String(cell));
   if(event.dataTransfer)event.dataTransfer.effectAllowed='move';
@@ -573,7 +676,7 @@ app.addEventListener('dragstart',event=>{
 app.addEventListener('dragover',event=>{
   if(dragFrom===null)return;
   const cell=event.target.closest?.('.cell[data-cell]');if(!cell)return;
-  if(context().profile.blocked.includes(Number(cell.dataset.cell)))return;
+  if((context().key==='corvette'?state.equipment.corvette.tech:context().profile).blocked.includes(Number(cell.dataset.cell)))return;
   event.preventDefault();if(event.dataTransfer)event.dataTransfer.dropEffect='move';
   app.querySelectorAll('.cell.drag-over').forEach(el=>el.classList.remove('drag-over'));
   cell.classList.add('drag-over');
@@ -584,7 +687,9 @@ app.addEventListener('drop',event=>{
   app.querySelectorAll('.cell.drag-over').forEach(el=>el.classList.remove('drag-over'));
   if(cell===null||cell===from)return;
   event.preventDefault();
-  const {profile}=context();if(!profile.layout||profile.blocked.includes(cell))return;
+  const {key,profile:ordinary}=context();
+  const profile=key==='corvette'?state.equipment.corvette.tech:ordinary;
+  if(!profile.layout||profile.blocked.includes(cell))return;
   [profile.layout.map[from],profile.layout.map[cell]]=[profile.layout.map[cell],profile.layout.map[from]];
   selectedCell=null;activeTile=profile.layout.map[cell]>=0?profile.layout.tiles[profile.layout.map[cell]]:null;
   profile.dirty=true;save();render();

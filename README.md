@@ -1,6 +1,6 @@
-# ATLAS MAX — Hybrid Command Deck + Corvette Workshop (Version 1.5, October 2026)
+# ATLAS MAX — Hybrid Command Deck + Corvette Supercharged Fix (Version 1.6, October 2026)
 
-ATLAS MAX is an unofficial, self-contained **No Man’s Sky equipment-layout planner**. This release retains the five existing equipment technology catalogs, their optimization engine, and the premium **No Man's Sky-inspired** command deck, while adding a dedicated sixth category for modular Corvette assembly.
+ATLAS MAX is an unofficial, self-contained **No Man’s Sky equipment-layout planner**. This release preserves all six equipment categories, expanded technology catalogs and the Corvette assembly workshop while fixing how supercharged slots affect module selection, priority, and placement. Corvettes also have an independent supercharged-technology grid below the physical construction planner.
 
 There is **no npm install, internet connection, account, API key, or build step**. The browser saves profiles locally. A copy of the game or a save-file connection is not required to explore the planner.
 
@@ -12,6 +12,22 @@ There is **no npm install, internet connection, account, API key, or build step*
 4. Existing profiles in the same browser's local storage are loaded and retained, with newly added default systems made available where appropriate. Imported/exported JSON loadouts are supported.
 
 **Important:** Do not upload only `index.html` or omit any referenced `.js`/`.css` file. The expanded catalogs and Corvette section require their separate supporting files. You can replace all files from this ZIP over the previous website files.
+
+## What's new in Version 1.6 — Supercharged Slots Fix
+
+- **Meaningful optimization:** The solver now seeds the marked purple coordinates with the best eligible module candidates before refining adjacency. The supercharged contribution is weighted more heavily than small adjacency changes, so it materially affects decisions instead of behaving like decoration.
+- **Clear proof in the interface:** Purple technology tiles with modeled performance benefit glow more prominently and show their relative `+SC` planning points. The right-hand briefing lists each SC position, the technology placed there, and SC-vs-adjacency planning scores. It distinguishes useful SC occupancy from simply filling a purple square.
+- **No misleading stat claims:** These numbers are *ranking heuristics*, not No Man's Sky damage/range/maneuverability percentages. The first rolled module (U1) is treated as the best actual roll; U2 and U3 are progressively less-preferred placeholders. Check your exact stats in-game and swap the upgrade order as necessary.
+- **Corvette tech matrix:** The Corvette page has a separate technology grid after the construction checklist. Choose the relevant shared starship technologies, mark your Corvette's real purple slot coordinates, and select **Optimize Corvette tech** to generate and compare arrangements. It does not invent a direct mapping between a physical hull part and an inventory technology tile. Structural manifests and technology layouts save separately inside the Corvette profile.
+- **Manual editing stays manual:** Marking purple slots, moving tiles, changing goals, or switching class *never auto-runs* either optimizer. Re-select **Optimize layout** or **Optimize Corvette tech** to apply new priorities. Older loadouts remain in local storage; older Corvette saves receive a blank tech matrix without disrupting construction modules.
+
+### How to use the fix
+
+1. Open your existing equipment category. For Corvette, scroll to **Corvette technology optimizer** below the construction planner.
+2. Set the grid dimensions, mark only unlocked technology slots, and mark the **actual** supercharged positions you see in-game (the original equipment demo markers are not your real positions).
+3. Select **Optimize layout** or **Optimize Corvette tech**. Review each purple slot's installed technology and relative SC priority, and compare your real module rolls in-game.
+
+**Scope:** Corvette structural modules, their exact technology side effects, and any game-generated bonus multipliers are not simulated. Shared starship technologies are exposed as editable planning choices, not inferred from the Corvette's hull. The SC heuristic does not replace testing actual results on your save.
 
 ## What's new in Version 1.5 — Corvette Workshop
 
@@ -36,7 +52,7 @@ The official [Voyagers release notes](https://www.nomanssky.com/voyagers-update/
 - **Mobile layout** with expandable Settings and Build Intelligence panels, larger touch areas and horizontally scrollable grids. The technology list stays navigable on narrow screens.
 - **Refined activity and status indicators:** selected goal, class, placed technology count, open-slot utilization, adjacency-link count, supercharged positions and relative planning score.
 
-**Save compatibility:** This is a presentation/interface upgrade, not a data migration. The profile storage key, JSON export format, optimizer algorithm, named catalogs and existing save behavior are unchanged. On your own device/browser, existing saved profiles should appear automatically when you replace the files. Back up using **Export** first as good practice.
+**Save compatibility:** The profile storage key, JSON export format, named catalogs and existing save behavior remain compatible. The SC solver was improved and the Corvette profile gained an optional technology subsection. On your own device/browser, existing saved profiles should appear automatically when you replace the files. Back up using **Export** first as good practice.
 
 ## Expanded equipment sections
 
@@ -85,7 +101,7 @@ The existing 15-category expanded Exosuit remains intact, including environmenta
 - `index.html` — page shell / load order (includes `catalog-expanded.js` and `corvette.js`)
 - `data.js` — original database with fully expanded Exosuit and default game reference links
 - `catalog-expanded.js` — expanded Multi-tool, Starship, Freighter and Exocraft databases
-- `corvette.js` — curated Corvette construction catalog, profile data, preset manifests, and checklist logic
+- `corvette.js` — curated Corvette construction catalog, profile data, preset manifests, and checklist logic; its technology grid is handled in `app.js` with the shared starship technology catalog
 - `corvette.css` — Corvette command-workbench styling, including its responsive schematic
 - `icons.js` — offline SVG component icon designs
 - `optimizer.js` — placement scoring, capacity handling, crafted-component assembly
@@ -94,7 +110,7 @@ The existing 15-category expanded Exosuit remains intact, including environmenta
 - `favicon.svg` — site identity
 - `tests/` — Node.js regression tests
 
-Run the checks with `node --test tests/*.test.cjs` (Node.js only). This release passed all **32** automated tests, plus an interactive Chromium smoke check at desktop and narrow mobile sizes. No browser errors or horizontal page overflow were observed in those smoke checks; real-device coverage is still limited.
+Run the checks with `node --test tests/*.test.cjs` (Node.js only). This release passes **40 automated regression tests**, including 8 new tests for supercharged weighting, edited coordinates, Corvette technology layout, persistence and reset. The previous release had interactive Chromium coverage; this release has **not** passed a separate Chromium screenshot check in the current environment, so visually review it on your deployed site.
 
 ## Sources and references
 

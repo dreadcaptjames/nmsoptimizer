@@ -63,26 +63,41 @@
     }
     return {tiles:request.slice(0,capacity),skipped:request.slice(capacity),requested:request.length};
   }
+  // Supercharging depends on the actual module stats, which are not supplied
+  // by this catalog. This is an explicit relative priority, never a DPS/% claim.
+  // U1 means the player's best rolled module; U2/U3 are progressively weaker
+  // candidates until the player compares the actual rolls in-game.
+  function scValue(tile, gear, goal) {
+    if (!tile) return 0;
+    const family = gear.families[tile.family];
+    if (!family || family.sc === 'none' || family.adjacency === 'none' || tile.noAdjacency) return 0;
+    const weight = Math.max(0, Number(goal.weights[tile.family] ?? 1));
+    if (!weight) return 0;
+    const preferred = family.sc === tile.role;
+    const roleFactor = preferred ? 1.6 : tile.role === 'crafted' ? .58 : .82;
+    const quality = tile.role === 'upgrade' ? (tile.sequence === 1 ? 1.3 : tile.sequence === 2 ? 1 : .8) : 1;
+    // Supercharging is a primary objective; ordinary adjacency is a secondary
+    // objective when two candidates have similar SC value.
+    return 18 * weight * roleFactor * quality;
+  }
   function scoreMap(map, tiles, gear, goal, cols, rows, supercharged) {
-    let score = 0, connections = 0, usedSC = 0;
+    let score = 0, connections = 0, usedSC = 0, effectiveSC = 0;
+    let scScore = 0, adjacencyScore = 0, compactnessPenalty = 0;
     const sc = new Set(supercharged);
-    const groups = {};
+    const groups = {}, scPlacements=[];
     for (let p = 0; p < map.length; p++) {
       const t = tiles[map[p]];
       if (!t) continue;
-      const w = goal.weights[t.family] || 1;
+      const w = Math.max(0, Number(goal.weights[t.family] ?? 1));
       const family = gear.families[t.family];
       (groups[t.family] ||= []).push(p);
       if (sc.has(p)) {
-        // Non-performance utilities and cosmetic tiles should not displace an
-        // upgrade from an SC slot. This never claims a real in-game multiplier.
-        if (family.sc === 'none' || family.adjacency === 'none') score -= 9;
-        else {
-          const pref = family.sc === t.role;
-          const qualityHint = t.role === 'upgrade' ? (t.sequence === 1 ? 1.15 : t.sequence === 2 ? 1.0 : .87) : .75;
-          score += 6.2 * w * (pref ? 1.25 : .75) * qualityHint;
-        }
+        const priority = scValue(t,gear,goal);
+        scScore += priority;
         usedSC++;
+        if (priority > 0) effectiveSC++;
+        scPlacements.push({position:p,tileId:t.id,label:t.label,family:t.family,
+          role:t.role,priority,preferred:priority>0&&family.sc===t.role});
       }
       // Only count right and lower edge to avoid doubling each adjacency.
       const right = p % cols < cols - 1 ? tiles[map[p+1]] : null;
@@ -94,11 +109,11 @@
              (t.addon === 'remembrance' && other.addon === 'star'));
           if(isStoryPair){
             // Verified health synergy: Star Seed beside Remembrance.
-            score += 40;
+            adjacencyScore += 40;
             connections++;
           }else if(family.adjacency !== 'none'){
             const coreBonus = other.role === 'core' || t.role === 'core' ? 1.12 : 1;
-            score += 3.5 * w * coreBonus;
+            adjacencyScore += 3.5 * w * coreBonus;
             connections++;
           }
         }
@@ -113,9 +128,11 @@
       const meanY = positions.reduce((s,p)=>s+Math.floor(p/cols),0)/positions.length;
       let spread = 0;
       positions.forEach(p => { spread += Math.abs(p%cols-meanX)+Math.abs(Math.floor(p/cols)-meanY); });
-      score -= spread * .32 * (goal.weights[id] || 1);
+      compactnessPenalty += spread * .32 * Math.max(0,Number(goal.weights[id] ?? 1));
     });
-    return {score,connections,usedSC};
+    score = scScore + adjacencyScore - compactnessPenalty;
+    return {score,connections,usedSC,effectiveSC,scScore,adjacencyScore,
+      compactnessPenalty,scPlacements};
   }
   function solve({gear,profile}) {
     const {cols,rows} = profile;
@@ -136,7 +153,27 @@
       const map = Array(size).fill(-1);
       const shuffled = available.slice();
       for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
-      for(let i=0;i<tiles.length;i++)map[shuffled[i]]=i;
+      // Put strong SC candidates in the *actual marked coordinates* first,
+      // then anneal the remainder for compact adjacency clusters. This avoids
+      // starting every attempt with filler modules on the rare SC positions.
+      const ranked=tiles.map((tile,i)=>({i,priority:scValue(tile,gear,goal),jitter:rnd()}))
+        .sort((a,b)=>b.priority-a.priority || a.jitter-b.jitter);
+      const availableSC=sc.slice().sort((a,b)=>
+        getNeighbors(b,cols,rows).filter(p=>!blocked.has(p)).length-
+        getNeighbors(a,cols,rows).filter(p=>!blocked.has(p)).length);
+      const assigned=new Set(),filled=new Set();
+      // Some attempts use the very best SC matches; others diversify the seed
+      // to escape traps where adjacency requires a different SC combination.
+      if(run<5){
+        for(let j=0;j<Math.min(availableSC.length,ranked.length);j++){
+          if(ranked[j].priority<=0)break;
+          map[availableSC[j]]=ranked[j].i;
+          assigned.add(ranked[j].i);filled.add(availableSC[j]);
+        }
+      }
+      const unfilled=shuffled.filter(p=>!filled.has(p));
+      const remaining=tiles.map((_,i)=>i).filter(i=>!assigned.has(i));
+      for(let i=0;i<remaining.length;i++)map[unfilled[i]]=remaining[i];
       let now = scoreMap(map,tiles,gear,goal,cols,rows,sc);
       let top = now;
       let topMap = map.slice();
@@ -161,7 +198,7 @@
     if(!result || !Array.isArray(result.map) || !Array.isArray(result.tiles))return null;
     return scoreMap(result.map,result.tiles,gear,gear.goals[profile.goal],profile.cols,profile.rows,profile.sc);
   }
-  const api = { solve, summarize, assemble, getNeighbors, index };
+  const api = { solve, summarize, assemble, getNeighbors, index, scValue };
   if(typeof module !== 'undefined' && module.exports)module.exports=api;
   root.ATLAS_SOLVER=api;
 })(typeof window!=='undefined'?window:globalThis);
