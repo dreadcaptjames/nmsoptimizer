@@ -64,11 +64,11 @@ ship.goals={
 };
 ship.families={
  launch:fam('Flight & travel','Launch Thrusters','LCH','launch','amber','Launch Thrusters','Launch Thruster Module',[
-   add('auto','Launch Auto-Charger','reroute',true),add('efficient','Efficient Thrusters','launch',true),add('aqua','Aqua Jets','water')],{why:'Launch Auto-Charger, Efficient Thrusters, and water landing tech are distinct crafted technologies.'}),
+   add('auto','Launch Auto-Charger','reroute',true,{noSC:true}),add('efficient','Efficient Thrusters','launch',true),add('aqua','Aqua Jets','water',false,{noAdjacency:true,noSC:true,adjacencyNote:'Water landing only. Aqua Jets do not create Launch Thruster adjacency bonuses.'})],{why:'Launch Auto-Charger, Efficient Thrusters, and water landing tech are distinct crafted technologies.'}),
  pulse:fam('Flight & travel','Pulse Engine','PUL','engine','mint','Pulse Engine','Pulse Engine Module',[
    add('sub','Sub-Light Amplifier','boost',true),add('instability','Instability Drive','engine',true),add('assist','Flight Assist Override','boost',true),add('photonix','Photonix Core','photon')],{why:'Maneuverability and boost benefit from crafted flight tech and rolled modules. Photonix Core may depend on acquisition.'}),
  hyperdrive:fam('Flight & travel','Hyperdrive & Stellar Drives','HYP','hyperdrive','violet','Hyperdrive','Hyperdrive Module',[
-   add('cadmium','Cadmium Drive','heat'),add('emeril','Emeril Drive','toxic'),add('indium','Indium Drive','cold',true),add('atlantid','Atlantid Drive','anomaly',true)],{why:'Crafted star-color drives are not procedural modules; Atlantid Drive grants access to purple systems.'}),
+   add('cadmium','Cadmium Drive','heat',false,{noSC:true}),add('emeril','Emeril Drive','toxic',false,{noSC:true}),add('indium','Indium Drive','cold',true,{noSC:true}),add('atlantid','Atlantid Drive','anomaly',true,{noSC:true}),add('warp','Emergency Warp Unit','hyperdrive',false,{noSC:true,adjacencyNote:'A Hyperdrive adjacency helper. It strengthens linked Hyperdrive upgrades but has no independent hyperdrive range to supercharge.'})],{why:'Crafted star-color drives are not procedural modules; Atlantid Drive enables purple systems. Emergency Warp Unit belongs to this Hyperdrive adjacency family. These travel utilities are adjacency helpers rather than a substitute for strong rolled range modules.'}),
  shield:fam('Flight & travel','Deflector Shield','SHD','shield','blue','Deflector Shield','Starship Shield Module',[
    add('ablative','Ablative Armour','shield',true)],{why:'Ablative Armour is an extra crafted shield technology, separate from rolled shielding modules.'}),
  photon:fam('Starship weapons','Photon Cannon','PHO','photon','amber','Photon Cannon','Photon Cannon Module',[
@@ -86,7 +86,7 @@ ship.families={
  scanners:fam('Utilities & scanners','System Scanners','SCN','scanner','blue',null,null,[
    add('economy','Economy Scanner','trade',true),add('conflict','Conflict Scanner','combat',true)],{why:'Information tools for the galaxy map rather than weapon or warp stats.'}),
  utility:fam('Utilities & scanners','Ship Utilities','UTL','toolkit','mint',null,null,[
-   add('teleport','Teleport Receiver','summon',true),add('cargo','Cargo Scan Deflector','shield'),add('warp','Emergency Warp Unit','hyperdrive')],{why:'Independent convenience and safety technologies; they do not share imaginary adjacency bonuses.'}),
+   add('teleport','Teleport Receiver','summon',true),add('cargo','Cargo Scan Deflector','shield')],{why:'Independent convenience and safety technologies; they do not share imaginary adjacency bonuses.'}),
  solar:fam('Specialized ship technology','Solar Ship Sail','SOL','spark','amber',null,null,[
    add('vesper','Vesper Sail','spark')],{why:'Vesper Sail is specific to Solar-class starships; other ship classes cannot freely install it.'}),
  sentinel:fam('Specialized ship technology','Sentinel Interceptor Systems','SEN','sentinel','violet',null,null,[

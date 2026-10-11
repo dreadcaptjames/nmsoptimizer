@@ -52,3 +52,7 @@
 /* SC-first planning strategy explanation */
 .sc-focus-strategy{border:1px solid #645185;background:#271e3b;border-radius:8px;padding:10px;margin:10px 0 11px;font-size:10px;line-height:1.6;color:#e4cfff}
 .sc-focus-strategy strong{color:#f4e7ff}.sc-focus-strategy span{color:#b8a8cb}
+
+/* Technology audit: make a selected tile's verified adjacency status clear. */
+.inspector-relationship{padding:.65rem .75rem;border:1px solid rgba(80,174,170,.26);background:rgba(51,143,153,.08);border-radius:.55rem;color:#bcd6d9;font-size:.82rem;line-height:1.5;}
+.inspector-relationship strong{color:#f1fcfc;}

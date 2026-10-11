@@ -33,9 +33,16 @@ The technology catalogs include named crafted upgrades and procedural module fam
 - Choose a goal suited to the equipment, such as movement, combat, exploration, or travel.
 - Generate a suggested arrangement **only when you explicitly choose Optimize layout**.
 - **Fill supercharged slots according to your chosen goal first:** prioritize as many eligible modules from the highest-ranked family as are useful and available, then continue to the next family if purple slots remain.
-- Arrange the remaining technology around those supercharged assignments to improve compatible orthogonal adjacency.
+- Arrange the remaining technology around those supercharged assignments to improve modeled orthogonal adjacency. Technology belonging to the same functional category does **not** automatically mean it shares an adjacency bonus.
 - Inspect which technologies occupy supercharged slots and view their *relative planning contribution*.
 - Distinguish core technology, crafted blueprints, and procedural upgrades; enforce supported procedural module limits and selected incompatibilities.
+
+
+### Technology relationships and adjacency
+
+ATLAS MAX distinguishes the **system a technology belongs to** from the **modules it actually links with**. For example, Emergency Warp Unit is a Hyperdrive adjacency helper, while Aqua Jets provides water landing without modeled Launch Thruster adjacency. The underwater Aeration Membrane is not treated as a direct bonus source for rechargeable Underwater Protection Modules; those underwater modules connect to each other. General environmental protection has some verified cross-family links that the planner models.
+
+The optimizer and highlighted slot borders use the same relationship rules. It avoids inventing bonuses for Corvette reactor relationships, independent ship utilities, and known functional-only components. A module can help neighboring upgrades without itself benefiting from a supercharged slot. These rules are a curated, conservative model; the game does not expose its complete live internal calculations to the app.
 
 ### Plan Corvettes in two ways
 

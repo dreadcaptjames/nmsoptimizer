@@ -5,7 +5,7 @@ window.ATLAS_DATA = Object.freeze({
   release: 'Cosmos 7.06',
   sources: [
     { name: 'Hello Games release log', url: 'https://www.nomanssky.com/release-log/' },
-    { name: 'NMS Resources • technology layouts', url: 'https://www.nomansskyresources.com/tech-layout-and-adjacency-bonus' },
+    { name: 'NMS Resources • technology layouts', url: 'https://www.nomansskyresources.com/guide-pages/tech-layouts-and-adjacency-bonus' },
     { name: 'NMS Resources • upgrade modules', url: 'https://www.nomansskyresources.com/guide-pages/upgrade-modules' }
   ],
   gear: {

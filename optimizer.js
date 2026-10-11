@@ -59,10 +59,42 @@
         if (addon.exclusive && chosen.has(addon.exclusive)) continue;
         if (addon.exclusive) chosen.add(addon.exclusive);
         request.push({id:id+':crafted:'+addon.id,family:id,role:'crafted',sequence:0,
-          addon:addon.id,label:addon.name,icon:addon.icon || family.icon,noAdjacency:!!addon.noAdjacency});
+          addon:addon.id,label:addon.name,icon:addon.icon || family.icon,noAdjacency:!!addon.noAdjacency,noSC:!!addon.noSC,adjacencyNote:addon.adjacencyNote||null});
       }
     }
     return {tiles:request.slice(0,capacity),skipped:request.slice(capacity),requested:request.length};
+  }
+  // Actual inventory relationships are not equivalent to the catalog section.
+  // Never invent adjacency solely from matching functional descriptions.
+  // Conservatively model only confirmed links and suppress explicitly unsupported
+  // technology pairs (e.g. Aqua-Jets, Aeration vs underwater oxygen modules).
+  function hazardAdjacencyMember(tile) {
+    if(!tile || tile.noAdjacency) return false;
+    if(['hazard','heat','cold','toxic','radiation','forbidden'].includes(tile.family))
+      return tile.role==='core' || tile.role==='upgrade' || (tile.family==='hazard' && tile.addon==='lattice');
+    return tile.family==='underwater' && tile.role==='core'; // Aeration Membrane: general hazard links
+  }
+  function areAdjacent(a,b,gear) {
+    if(!a || !b || a.noAdjacency || b.noAdjacency) return false;
+    // The ONLY adjacency relationship among Atlas story/utility objects.
+    if(a.family==='story' || b.family==='story')
+      return a.family==='story' && b.family==='story' &&
+        ((a.addon==='star' && b.addon==='remembrance') ||
+         (b.addon==='star' && a.addon==='remembrance'));
+    // These recharged underwater O2 modules link to EACH OTHER, not the
+    // Aeration Membrane or other environmental shielding technologies.
+    if(a.family==='underwater' || b.family==='underwater') {
+      if(a.family==='underwater' && b.family==='underwater')
+        return a.role==='upgrade' && b.role==='upgrade';
+      return hazardAdjacencyMember(a) && hazardAdjacencyMember(b);
+    }
+    // Exosuit heat/cold/toxic/radiation shielding and suspicious hazard
+    // protection have documented cross-family hazard adjacency relationships.
+    // No extra relation is inferred outside of the Exosuit catalog.
+    if(gear?.families?.hazard && hazardAdjacencyMember(a) && hazardAdjacencyMember(b))
+      return true;
+    const f=gear?.families?.[a.family];
+    return a.family===b.family && f?.adjacency!=='none';
   }
   // Supercharging depends on the actual module stats, which are not supplied
   // by this catalog. This is an explicit relative priority, never a DPS/% claim.
@@ -71,7 +103,7 @@
   function scValue(tile, gear, goal) {
     if (!tile) return 0;
     const family = gear.families[tile.family];
-    if (!family || family.sc === 'none' || (tile.role!=='construction' && (family.adjacency === 'none' || tile.noAdjacency))) return 0;
+    if (!family || tile.noSC || family.sc === 'none' || (tile.role!=='construction' && (family.adjacency === 'none' || tile.noAdjacency))) return 0;
     const weight = Math.max(0, Number(goal.weights[tile.family] ?? 1));
     if (!weight) return 0;
     const preferred = family.sc === tile.role;
@@ -117,26 +149,22 @@
       const right = p % cols < cols - 1 ? tiles[map[p+1]] : null;
       const down = p + cols < map.length ? tiles[map[p+cols]] : null;
       [right,down].forEach(other => {
-        if (other && other.family === t.family && !other.noAdjacency && !t.noAdjacency) {
-          const isStoryPair = t.family === 'story' &&
-            ((t.addon === 'star' && other.addon === 'remembrance') ||
-             (t.addon === 'remembrance' && other.addon === 'star'));
-          if(isStoryPair){
-            // Verified health synergy: Star Seed beside Remembrance.
-            adjacencyScore += 40;
-            connections++;
-          }else if(family.adjacency !== 'none'){
+        if (areAdjacent(t,other,gear)) {
+          const isStoryPair=t.family==='story';
+          if(isStoryPair) adjacencyScore += 40; // Star Seed + Remembrance
+          else {
+            const otherWeight=Math.max(0,Number(goal.weights[other.family]??1));
             const coreBonus = other.role === 'core' || t.role === 'core' ? 1.12 : 1;
-            adjacencyScore += 3.5 * w * coreBonus;
-            connections++;
+            adjacencyScore += 3.5 * (t.family===other.family?w:Math.max(w,otherWeight)) * coreBonus;
           }
+          connections++;
         }
       });
     }
     // Small compactness preference reduces fragmented same-family islands.
     Object.entries(groups).forEach(([id,positions]) => {
       if (positions.length < 2 || gear.families[id].adjacency === 'none') return;
-      positions = positions.filter(pos => !tiles[map[pos]].noAdjacency);
+      positions = positions.filter(pos => !tiles[map[pos]].noAdjacency && !(id==='underwater' && tiles[map[pos]].role!=='upgrade'));
       if(positions.length<2)return;
       const meanX = positions.reduce((s,p)=>s+(p%cols),0)/positions.length;
       const meanY = positions.reduce((s,p)=>s+Math.floor(p/cols),0)/positions.length;
@@ -218,7 +246,7 @@
     if(!result || !Array.isArray(result.map) || !Array.isArray(result.tiles))return null;
     return scoreMap(result.map,result.tiles,gear,gear.goals[profile.goal],profile.cols,profile.rows,profile.sc);
   }
-  const api = { solve, summarize, assemble, getNeighbors, index, scValue, superchargedPlan };
+  const api = { solve, summarize, assemble, areAdjacent, getNeighbors, index, scValue, superchargedPlan };
   if(typeof module !== 'undefined' && module.exports)module.exports=api;
   root.ATLAS_SOLVER=api;
 })(typeof window!=='undefined'?window:globalThis);

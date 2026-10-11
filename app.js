@@ -141,7 +141,12 @@ function normalizeProfile(key,raw){
   p.sc=p.sc.filter(pos=>!p.blocked.includes(pos));
   p.depth=clamp(raw.depth,1,3);p.target=raw.target==='X'?'X':'S';
   p.enabled=[...new Set((Array.isArray(raw.enabled)?raw.enabled:base.enabled).filter(id=>gear.families[id]&&canUse(gear.families[id],p.vehicle)))];
-  p.addons=validAddons(gear,Array.isArray(raw.addons)?raw.addons:base.addons,p.vehicle);
+  // Pre-audit exports stored Emergency Warp under Ship Utilities.
+  // Preserve ownership and migrate it to the actual Hyperdrive family.
+  const oldWarp=key==='starship' && Array.isArray(raw.addons) && raw.addons.includes('utility:warp');
+  const addonRequest=Array.isArray(raw.addons)?raw.addons.map(x=>oldWarp&&x==='utility:warp'?'hyperdrive:warp':x):base.addons;
+  p.addons=validAddons(gear,addonRequest,p.vehicle);
+  if(oldWarp && !p.enabled.includes('hyperdrive'))p.enabled.push('hyperdrive');
   // Upgrade old four-family Exosuit saves without deleting their existing layout.
   const migrating=key==='exosuit'&&!Array.isArray(raw.addons);
   // Existing v1 profiles predate these expanded catalogs. Preserve their hand-built
@@ -156,19 +161,23 @@ function normalizeProfile(key,raw){
     p.enabled=[...new Set([...p.enabled,...gear.goals[p.goal].defaults.filter(id=>!old.has(id))])];
   }
   p.dirty=!!raw.dirty;
-  if(raw.layout&&Array.isArray(raw.layout.map)&&Array.isArray(raw.layout.tiles)
-    &&raw.layout.map.length===p.cols*p.rows&&raw.layout.tiles.length<=p.cols*p.rows
-    &&raw.layout.map.every(t=>Number.isInteger(t)&&t>=-1&&t<raw.layout.tiles.length)
-    &&raw.layout.tiles.every(t=>t&&gear.families[t.family]&&['core','upgrade','crafted'].includes(t.role)&&Number.isInteger(t.sequence)&&t.sequence>=0&&t.sequence<=3)
+  // Translate the old utility tile without discarding manually positioned layouts.
+  const importedTiles=Array.isArray(raw.layout?.tiles)?raw.layout.tiles.map(t=>
+    key==='starship' && t?.role==='crafted' && t.family==='utility' && t.addon==='warp'
+      ?{...t,family:'hyperdrive'}:t):null;
+  if(raw.layout&&Array.isArray(raw.layout.map)&&Array.isArray(importedTiles)
+    &&raw.layout.map.length===p.cols*p.rows&&importedTiles.length<=p.cols*p.rows
+    &&raw.layout.map.every(t=>Number.isInteger(t)&&t>=-1&&t<importedTiles.length)
+    &&importedTiles.every(t=>t&&gear.families[t.family]&&['core','upgrade','crafted'].includes(t.role)&&Number.isInteger(t.sequence)&&t.sequence>=0&&t.sequence<=3)
     &&raw.layout.map.every((t,i)=>t===-1||!p.blocked.includes(i))){
     // Reconstitute only known family identifiers and safe, known technology labels.
-    const tiles=raw.layout.tiles.map(t=>{
+    const tiles=importedTiles.map(t=>{
       const fam=gear.families[t.family];
       if(!canUse(fam,p.vehicle))return null;
       if(t.role==='crafted'){
         const addon=(fam.addons||[]).find(a=>a.id===t.addon&&canUse(a,p.vehicle));
         return addon?{id:t.family+':crafted:'+addon.id,family:t.family,role:'crafted',sequence:0,
-          addon:addon.id,label:addon.name,icon:addon.icon||fam.icon,noAdjacency:!!addon.noAdjacency}:null;
+          addon:addon.id,label:addon.name,icon:addon.icon||fam.icon,noAdjacency:!!addon.noAdjacency,noSC:!!addon.noSC,adjacencyNote:addon.adjacencyNote||null}:null;
       }
       return {id:t.family+':'+(t.role==='core'?'core':t.sequence),family:t.family,role:t.role,
         sequence:t.sequence,label:t.role==='core'?fam.core:fam.upgrade};
@@ -184,7 +193,7 @@ function normalizeProfile(key,raw){
     if(valid){
       const planned=SOLVER.assemble(gear,p,p.cols*p.rows-p.blocked.length);
       p.layout={tiles,map:raw.layout.map.slice(),skipped:planned.skipped,requested:planned.requested};
-      if(migrating||migratingCatalog)p.dirty=true;
+      if(migrating||migratingCatalog||oldWarp)p.dirty=true;
     }
   }
   if(key==='exocraft'){
@@ -244,16 +253,10 @@ function renderTechnologyChoices(gear,profile,goal){
   return parts.join('');
 }
 function adjacencyFor(i,gear,profile,tile){
-  if(!tile||!profile.layout||tile.noAdjacency)return [];
+  if(!tile||!profile.layout)return [];
   const map=profile.layout.map,tiles=profile.layout.tiles,cols=profile.cols,rows=profile.rows;
   const sides=[['top',i-cols,i>=cols],['bottom',i+cols,i<cols*(rows-1)],['left',i-1,i%cols>0],['right',i+1,i%cols<cols-1]];
-  return sides.filter(([side,p,valid])=>{
-    if(!valid||map[p]<0)return false;
-    const other=tiles[map[p]],fam=gear.families[tile.family];
-    if(!other||other.family!==tile.family||other.noAdjacency)return false;
-    if(fam.adjacency!=='none')return true;
-    return tile.family==='story'&&['star','remembrance'].includes(tile.addon)&&['star','remembrance'].includes(other.addon)&&tile.addon!==other.addon;
-  }).map(x=>x[0]);
+  return sides.filter(([side,p,valid])=>valid&&map[p]>=0&&SOLVER.areAdjacent(tile,tiles[map[p]],gear)).map(x=>x[0]);
 }
 function chrome(key){return `
     <header class="topbar">
@@ -558,7 +561,7 @@ function renderInspector(tile,gear,profile,selectedPos){
   const value=SOLVER.scValue(tile,gear,gear.goals[profile.goal]);
   const onSC=selectedPos!==null&&profile.sc.includes(selectedPos);
   const scAdvice=value>0?(onSC?`This technology is benefiting from the marked supercharged position (+${Math.round(value)} relative planning points).`:`Potential SC priority: +${Math.round(value)} relative planning points. The optimizer fills the highest-priority eligible technology family first, then optimizes adjacency.`):'This technology has no modeled supercharged priority. Reserve purple slots for performance technology where possible.';
-  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'family-glyph')}</span><div><strong>${esc(tile.label)}</strong><small>${esc(role)}</small></div></div><p>${esc(fam.why)}</p><div class="inspector-sc"><strong>✦ Supercharged evaluation</strong><span>${esc(scAdvice)}</span></div><div class="inspector-note">${tile.role==='upgrade'&&tile.sequence===1?'U1 represents your best module roll, not a guaranteed stat value. ':'Use Move tech to select another slot or drag this module to relocate it.'}</div></div>`;
+  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'family-glyph')}</span><div><strong>${esc(tile.label)}</strong><small>${esc(role)}</small></div></div><p>${esc(fam.why)}</p>${tile.adjacencyNote?`<p class="inspector-relationship"><strong>Adjacency:</strong> ${esc(tile.adjacencyNote)}</p>`:tile.noAdjacency?'<p class="inspector-relationship"><strong>Adjacency:</strong> No confirmed placement bonus for this technology.</p>':''}<div class="inspector-sc"><strong>✦ Supercharged evaluation</strong><span>${esc(scAdvice)}</span></div><div class="inspector-note">${tile.role==='upgrade'&&tile.sequence===1?'U1 represents your best module roll, not a guaranteed stat value. ':'Use Move tech to select another slot or drag this module to relocate it.'}</div></div>`;
 }
 function renderBriefing(gear,profile,sorted,stats){
   const goal=gear.goals[profile.goal];
@@ -578,7 +581,7 @@ function renderBriefing(gear,profile,sorted,stats){
     ${placements?`<ul class="sc-assignment-list">${placements}</ul>`:`<p class="sc-analysis-empty">${profile.sc.length?'No technology occupies your marked SC slots.':'Mark your real purple slots and select Optimize layout to prioritize them.'}</p>`}
     <p class="sc-disclaimer">Relative planning points, not actual in-game stat bonuses. U1 assumes your strongest rolled upgrade.</p></div>
   <div class="priority-item"><span class="number-badge">✧</span><div><h4>${stats.effectiveSC}/${profile.sc.length} supercharged positions with performance tech</h4><p>Prioritized for your ${esc(gear.goals[profile.goal].label.toLowerCase())} goal. Only marked positions can receive these bonuses.</p></div></div>
-  <div class="priority-item"><span class="number-badge">⌗</span><div><h4>${stats.connections} same-family adjacency links</h4><p>Only side-by-side technology of the same supported family contributes to this count, not diagonals.</p></div></div>
+  <div class="priority-item"><span class="number-badge">⌗</span><div><h4>${stats.connections} verified adjacency links</h4><p>Only modeled compatible side-by-side technologies count, including confirmed cross-family hazard links, not diagonals.</p></div></div>
   ${sorted.slice(0,3).map((id,i)=>`<div class="priority-item"><span class="number-badge">${i+1}</span><div><h4>${esc(gear.families[id].name)}</h4><p>${esc(gear.families[id].next)}</p></div></div>`).join('')}
   <div class="notice">${profile.target==='X'?'<strong>X-class reminder:</strong> X-class rolls vary dramatically. A good S-class module can outperform a poor X-class roll.':'<strong>S-class reminder:</strong> S-class is a reliable target, but compare actual stats rather than assuming every roll is identical.'}</div>`;
 }
