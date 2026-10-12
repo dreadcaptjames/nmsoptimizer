@@ -80,7 +80,7 @@ In particular:
 
 ## Player control and data
 
-**ATLAS MAX always starts fresh.** Opening or refreshing the page restores the default settings for all six equipment categories; it does not automatically reload a previous build. While the page is open, switching equipment categories retains your changes within that visit. To keep a build between visits, use **Export** to download a JSON file and **Import** to load that file manually later. If you close or refresh the page before exporting, you should expect to start over. Nothing is uploaded to an ATLAS MAX account or game service.
+**ATLAS MAX always starts fresh.** Opening or refreshing the page restores the default settings for all six equipment categories, with **no supercharged slots preselected**; it does not automatically reload a previous build. Mark the purple-slot positions you actually have before optimizing. While the page is open, switching equipment categories retains your changes within that visit. To keep a build between visits, use **Export** to download a JSON file and **Import** to load that file manually later. If you close or refresh the page before exporting, you should expect to start over. Nothing is uploaded to an ATLAS MAX account or game service.
 
 The app's illustrated icons are original, game-inspired interface artwork, not official No Man’s Sky inventory icons.
 

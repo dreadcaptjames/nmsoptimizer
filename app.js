@@ -27,11 +27,8 @@ const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const clamp=(n,min,max)=>Math.min(max,Math.max(min,Number(n)||min));
 const uniqueValid=(xs,size)=>[...new Set((Array.isArray(xs)?xs:[]).filter(x=>Number.isInteger(x)&&x>=0&&x<size))];
 const wantedSC=(key,cls)=>DATA.gear[key].fixedSC || ({C:1,B:2,A:3,S:4}[cls]||4);
-function demoSC(key,cls,cols=8,rows=5){
-  const templates={exosuit:[2,19,32],multitool:[3,14,25,37],starship:[4,13,26,35],freighter:[5,14,25,36],exocraft:[2,19,33]};
-  const positions=(templates[key]||[]).filter(p=>p<cols*rows);
-  return positions.slice(0,wantedSC(key,cls));
-}
+// No sample supercharged coordinates: every new profile starts without markers.
+// Players must mark the positions from their own in-game inventory.
 function canUse(f,vehicle){return !f.vehicles || !vehicle || f.vehicles.includes(vehicle);}
 function availableFamilies(gear,vehicle){return Object.entries(gear.families).filter(([id,f])=>canUse(f,vehicle));}
 function goalDefaults(gear,goal,vehicle){const g=gear.goals[goal];return (g.defaultsByVehicle?.[vehicle] || g.defaults).filter(id=>gear.families[id]&&canUse(gear.families[id],vehicle));}
@@ -122,7 +119,7 @@ function defaultProfile(key){
   if(key==='corvette')return {...CV.defaults(),tech:corvetteTechProfile(null,'S',{})};
   const gear=DATA.gear[key],goal=Object.keys(gear.goals)[0],cls='S',vehicle=gear.vehicleOptions?Object.keys(gear.vehicleOptions)[0]:null;
   const cols=key==='exosuit'?10:8,rows=key==='exosuit'?6:5;
-  return {name:'',cls,goal,vehicle,cols,rows,sc:demoSC(key,cls,cols,rows),blocked:[],scExample:true,enabled:goalDefaults(gear,goal,vehicle),addons:defaultAddons(gear,vehicle),catalogVersion:2,depth:3,target:'S',layout:null,dirty:false,...(vehicle?{savedVehicles:{}}:{})};
+  return {name:'',cls,goal,vehicle,cols,rows,sc:[],blocked:[],scExample:false,enabled:goalDefaults(gear,goal,vehicle),addons:defaultAddons(gear,vehicle),catalogVersion:2,depth:3,target:'S',layout:null,dirty:false,...(vehicle?{savedVehicles:{}}:{})};
 }
 function initialState(){return {version:1,current:'starship',equipment:Object.fromEntries(gearKeys.map(k=>[k,defaultProfile(k)]))};}
 function normalizeProfile(key,raw){
@@ -359,7 +356,7 @@ function render(){
           <div class="grid-legend"><span><i class="swatch tlswatch"></i> Technology</span><span><i class="swatch scswatch"></i> Supercharged</span><span><i class="swatch adjwatch"></i> Adjacency</span><span><i class="swatch lkswatch"></i> Locked</span></div>
           <div class="hint-line">${editing==='move'?'↔ Drag a module or select two slots to swap. Tap a module to inspect it.':editing==='charge'?'✦ Select a position to add or remove a supercharged marker.':'▧ Select slots to lock or unlock their positions.'} <span>CORE = base · U1–U3 = rolled · TECH = crafted</span></div>
           ${profile.scExample?`<div class="notice warning"><strong>Example supercharged positions.</strong> These aren't your real slot coordinates. Choose <b>Clear SC</b> and mark your own for a personalized build.</div>`:''}
-          ${scMismatched?`<div class="notice warning"><strong>Slot-count check:</strong> ${profSC.length} supercharged positions marked; ${scCount} expected for this equipment setting. Verify your inventory.</div>`:''}
+          ${!profSC.length?`<div class="notice"><strong>No supercharged slots marked.</strong> Choose <b>Supercharged</b> and select the positions from your in-game inventory. No sample slots are preselected.</div>`:scMismatched?`<div class="notice warning"><strong>Slot-count check:</strong> ${profSC.length} supercharged positions marked; ${scCount} expected for this equipment setting. Verify your inventory.</div>`:''}
           ${profile.layout&&profile.dirty?`<div class="notice warning"><strong>Supercharged placement may be out of date.</strong> Your slot positions, focus, or module arrangement changed. Select <b>Optimize layout</b> again to assign the strongest candidates to your purple slots. Nothing rearranges automatically.</div>`:''}
           ${hasSkipped?`<div class="notice warning"><strong>${profile.layout.skipped.length} requested technologies didn't fit.</strong> ${esc(profile.layout.skipped.slice(0,5).map(t=>t.label).join(', '))}${profile.layout.skipped.length>5?' …':''}. Unlock slots, enlarge the grid or reduce selected technology.</div>`:''}
           <div class="toolbar-bottom"><div class="action-row"><button class="btn primary" data-action="optimize">✧ Optimize layout <span>↗</span></button><button class="btn" data-action="copy" ${!profile.layout?'disabled':''}>⧉ Copy build</button></div><div class="action-row"><button class="btn quiet" data-action="clear-layout">Clear layout</button><button class="btn quiet warn" data-action="reset">Reset</button></div></div>
@@ -729,7 +726,10 @@ app.addEventListener('change',event=>{
   }
   if(t.id==='gear-name'){profile.name=t.value.trim().slice(0,80);save();render();return;}
   if(t.id==='gear-class'){if(gear.fixedSC)return;profile.cls=t.value;
-    if(profile.scExample)profile.sc=demoSC(key,profile.cls,profile.cols,profile.rows);
+    // Class changes never create sample SC markers. Preserve explicit positions,
+    // trimming any that exceed the class's supported marker count.
+    profile.sc=profile.sc.slice(0,wantedSC(key,profile.cls));
+    profile.scExample=false;
     layoutChanged(profile);return;}
   if(t.id==='gear-target'){profile.target=t.value==='X'?'X':'S';layoutChanged(profile);return;}
   if(t.id==='vehicle'&&gear.vehicleOptions?.[t.value]){
@@ -758,7 +758,7 @@ app.addEventListener('change',event=>{
     if(profile.cols!==oldCols||profile.rows!==oldRows){
       // Coordinates change when row width changes; never silently remap technology.
       profile.layout=null;profile.dirty=false;profile.blocked=[];
-      profile.sc=profile.scExample?demoSC(key,profile.cls,profile.cols,profile.rows):[];
+      profile.sc=[];profile.scExample=false;
       activeTile=null;selectedCell=null;
       save();render();toast('Grid dimensions changed. Technology placement cleared; re-mark real slot positions.');
     }return;
