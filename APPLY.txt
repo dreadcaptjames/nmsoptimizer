@@ -1,0 +1,23 @@
+ATLAS MAX THEME ADD-ON
+
+The latest full ATLAS MAX release file wasn't available to edit in this session.
+This ZIP is an additive patch and preserves your existing website source.
+
+OPTION 1: Quick integration
+1. Copy atlas-theme-switcher.js into the folder containing your existing index.html.
+2. Add this line immediately before the closing </body> in index.html:
+   <script src="atlas-theme-switcher.js" defer></script>
+3. Keep your other site files as they are.
+
+OPTION 2: Generate a complete patched website ZIP
+Run:
+   python apply_theme_patch.py YOUR_EXISTING_ATLAS_MAX.zip
+
+The script creates atlas-max-with-five-themes.zip containing your original site
+plus the theme selector, without changing any other existing source files.
+
+Demo: open demo/preview.html to preview all five themes before integrating.
+
+The theme selection is stored separately from build data, so fresh-start behavior
+is unaffected. If you want selection to reset to Atlas on every page load,
+remove the localStorage set/get lines in atlas-theme-switcher.js.
