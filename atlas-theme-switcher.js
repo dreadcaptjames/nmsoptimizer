@@ -102,6 +102,55 @@
       content:""; position:fixed; inset:0; pointer-events:none; z-index:2147483000;
       background:radial-gradient(ellipse 82% 62% at 93% -22%,rgba(var(--at-theme-rgb),.08),transparent 75%);
     }
+    /* ATLAS MAX's existing command-deck controls: theme the chrome, not the gear. */
+    html[data-atlas-theme] {
+      --bg:var(--at-theme-bg);
+      --surface:var(--at-theme-panel);
+      --accent-glow:rgba(var(--at-theme-rgb),.18);
+    }
+    html[data-atlas-theme] .backdrop {
+      background:radial-gradient(ellipse 45% 29% at 42% -2%,rgba(var(--at-theme-rgb),.19),transparent 95%),
+        radial-gradient(ellipse 38% 45% at 100% 22%,rgba(var(--at-theme-rgb),.08),transparent 83%),
+        linear-gradient(145deg,var(--at-theme-bg) 0%,#080f1a 60%,var(--at-theme-panel) 100%);
+    }
+    html[data-atlas-theme] .gear-btn.active {
+      border-color:var(--at-theme-accent);
+      background:linear-gradient(110deg,rgba(var(--at-theme-rgb),.22),rgba(17,42,54,.75));
+      box-shadow:0 0 25px rgba(var(--at-theme-rgb),.11),inset 0 -2px var(--at-theme-accent);
+    }
+    html[data-atlas-theme] .gear-btn.active .gear-arrow,
+    html[data-atlas-theme] .gear-btn.active .gear-text small {color:var(--at-theme-bright)}
+    html[data-atlas-theme] .brand-icon {
+      border-color:var(--at-theme-accent);
+      background:linear-gradient(145deg,var(--at-theme-deep),#111f2d 75%);
+      box-shadow:0 0 35px rgba(var(--at-theme-rgb),.13),inset 0 0 19px rgba(var(--at-theme-rgb),.10);
+    }
+    html[data-atlas-theme] .loadout-badge {
+      background:var(--at-theme-deep);border-color:var(--at-theme-accent);
+      box-shadow:inset 0 0 25px rgba(var(--at-theme-rgb),.13);color:var(--at-theme-bright);
+    }
+    html[data-atlas-theme] .mode.active:not(.cv-tech-toolbar .mode),
+    html[data-atlas-theme] .segmented button.current {
+      background:linear-gradient(100deg,var(--at-theme-deep),rgba(var(--at-theme-rgb),.35));
+      border-color:var(--at-theme-accent);color:var(--at-theme-label);
+      box-shadow:0 1px 9px rgba(var(--at-theme-rgb),.13);
+    }
+    html[data-atlas-theme] .btn.primary {
+      border-color:var(--at-theme-accent);
+      background:linear-gradient(120deg,var(--at-theme-accent),var(--at-theme-bright));
+      color:#0c1420;box-shadow:0 4px 22px rgba(var(--at-theme-rgb),.21);
+    }
+    html[data-atlas-theme] .btn.primary:hover:not(:disabled) {
+      background:linear-gradient(120deg,var(--at-theme-bright),var(--at-theme-label));
+      border-color:var(--at-theme-bright);
+    }
+    html[data-atlas-theme] .version {
+      border-color:rgba(var(--at-theme-rgb),.46);
+      background:rgba(var(--at-theme-rgb),.10);color:var(--at-theme-label);
+    }
+    html[data-atlas-theme] .grid-utility span:first-child,
+    html[data-atlas-theme] .library-heading h3 span {color:var(--at-theme-bright)}
+    /* Never override .cell.sc, .cell.tile, adjacency lines, or equipment-class colors. */
     #${FOOTER_ID}, #${FOOTER_ID} * {box-sizing:border-box}
     #${FOOTER_ID} {
       --at-footer-border:rgba(var(--at-theme-rgb),.24);
