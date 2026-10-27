@@ -372,7 +372,7 @@ function render(){
         </div>
       </aside>
     </div>
-    <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
+    <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><a class="footer-resource-link" href="https://dreadcaptjames.github.io/nmscraftingrefining/" target="_blank" rel="noopener noreferrer" aria-label="Open NMS Crafting and Refining Guide in a new tab">NMS Crafting &amp; Refining Guide ↗</a><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
   if(technologyQuery)applySearch();
   restoreWorkbenchView(view);
 }
@@ -468,7 +468,7 @@ function renderCorvette(){
     </div>
    </aside>
   </div>
-  <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
+  <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><a class="footer-resource-link" href="https://dreadcaptjames.github.io/nmscraftingrefining/" target="_blank" rel="noopener noreferrer" aria-label="Open NMS Crafting and Refining Guide in a new tab">NMS Crafting &amp; Refining Guide ↗</a><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
  if(corvetteQuery)applyCorvetteSearch();
 }
 let corvetteQuery='';
