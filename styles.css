@@ -57,16 +57,3 @@
 .inspector-relationship{padding:.65rem .75rem;border:1px solid rgba(80,174,170,.26);background:rgba(51,143,153,.08);border-radius:.55rem;color:#bcd6d9;font-size:.82rem;line-height:1.5;}
 .inspector-relationship strong{color:#f1fcfc;}
 
-/* Companion resource link in both workbench footers. */
-.footer .footer-resource-link {
-  color: var(--at-theme-accent, #79d9ec);
-  font-weight: 750;
-  text-decoration: none;
-  text-underline-offset: 3px;
-  transition: color .15s ease;
-}
-.footer .footer-resource-link:hover,
-.footer .footer-resource-link:focus-visible {
-  color: var(--at-theme-bright, #b7f2ff);
-  text-decoration: underline;
-}

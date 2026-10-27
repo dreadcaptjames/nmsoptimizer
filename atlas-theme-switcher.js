@@ -199,6 +199,28 @@
       padding-top:13px;border-top:1px solid rgba(178,192,212,.12);font-size:11px;color:#a5afc0;line-height:1.5}
     #${FOOTER_ID} .at-current {color:var(--at-theme-bright);font-weight:700}
     #${FOOTER_ID} .at-separator {opacity:.45;margin:0 5px}
+
+    /* Companion resource sits below the theme selection, at the very bottom. */
+    #${FOOTER_ID} .at-companion {
+      margin-top:19px;padding-top:18px;border-top:1px solid rgba(178,192,212,.16);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    }
+    #${FOOTER_ID} .at-companion-label {
+      color:#aab4c5;font-size:10px;font-weight:700;letter-spacing:.12em;
+    }
+    #${FOOTER_ID} .at-companion-link {
+      color:var(--at-theme-label);background:rgba(var(--at-theme-rgb),.12);
+      border:1px solid rgba(var(--at-theme-rgb),.4);border-radius:9px;
+      display:inline-flex;align-items:center;gap:8px;padding:11px 15px;
+      font-size:12px;font-weight:750;line-height:1.4;text-decoration:none;
+      transition:background .15s,border-color .15s;
+    }
+    #${FOOTER_ID} .at-companion-link:hover {
+      background:rgba(var(--at-theme-rgb),.22);border-color:var(--at-theme-accent);
+    }
+    #${FOOTER_ID} .at-companion-link:focus-visible {
+      outline:2px solid var(--at-theme-bright);outline-offset:3px;
+    }
     @media(max-width:1000px){#${FOOTER_ID} .at-options{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(max-width:620px){
       #${FOOTER_ID}{width:calc(100% - 18px);margin:24px auto 12px;padding:16px}
@@ -265,6 +287,11 @@
     const bottom = document.createElement('div');bottom.className = 'at-bottom';
     bottom.innerHTML = '<span>ACTIVE PROFILE <span class="at-separator">/</span> <span class="at-current" data-theme-current>Atlas</span></span><span>Interface theme only · Technology class colors and purple SC markers are unchanged</span>';
     footer.appendChild(bottom);
+    const companion = document.createElement('nav');
+    companion.className = 'at-companion';
+    companion.setAttribute('aria-label', 'Companion resource');
+    companion.innerHTML = '<span class="at-companion-label">COMPANION RESOURCE</span><a class="at-companion-link" href="https://dreadcaptjames.github.io/nmscraftingrefining/" target="_blank" rel="noopener noreferrer" aria-label="Open NMS Crafting and Refining Guide in a new tab">NMS Crafting &amp; Refining Guide <span aria-hidden="true">↗</span></a>';
+    footer.appendChild(companion);
     return footer;
   }
 
