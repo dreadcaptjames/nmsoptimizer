@@ -12,6 +12,12 @@ Updated October 28, 2026. Source: [Hello Games — official 7.10 notes](https://
 - Added a Multi-Tool note about the Larva Cannon (a purchasable living Multi-Tool, **not** a separately installable weapon upgrade). Existing weapon and utility optimization remains the correct use of that workbench.
 - Updated the release reference label to Forsaken 7.10.
 
+## October 28 Corvette catalog audit and expansion
+
+The initial Forsaken build contained a curated *subset* of older Corvette modules, making many established parts impossible to plan. This release adds **119 named historical catalog entries** across hull connectors, exterior fairings/plating, additional thruster and wing shapes, cargo racks, windows, attachments and interior accessways. The part names were cross-checked against [No Man's Sky Resources Corvette directory](https://www.nomansskyresources.com/corvette-parts) and [No Man's Sky Handbook](https://nmshandbook.com/corvette/). The older part directories are *not* proof that each entry belongs to FORSAKEN.
+
+The Corvette catalog now includes a category filter, full-text search, a **In my plan** view, and a result count. These changes keep a broad part library usable on mobile and desktop. Existing part IDs and exported manifests are preserved. Newly added visual and structural entries are intentionally **catalog-only**—there are no invented tech tiles, adjacency bonuses or performance numbers. Generic Forsaken biomechanical placeholders remain labeled as such; Hello Games' launch notes do not provide an exhaustive itemized list.
+
 ## Deliberately unchanged
 
 - Supercharged slot selection, scoring, grouping and adjacency rules. Official 7.10 notes do not specify new verified adjacency modifiers or SC math.

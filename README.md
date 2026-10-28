@@ -49,7 +49,7 @@ The optimizer and highlighted slot borders use the same relationship rules. It a
 
 ### Plan Corvettes in two ways
 
-**Corvette Workshop** provides a curated catalog of structural and functional modules, quantity selection, a conceptual front/middle/rear schematic, build-goal starter plans, and a checklist of essential part types. Starter manifests appear only after you request one.
+**Corvette Workshop** now offers **181 planning entries**, including 119 additional established Corvette part names from community catalogs (hull connectors, fairings, wings, supplementary thrusters, cargo racks, windows, exterior fittings and interior access). Use the category selector, search field or **In my plan** filter to browse. The conceptual front/middle/rear schematic, explicit quantity selection, starter manifests and essential-systems checklist remain. Starter manifests appear only when requested. New historical appearance pieces have **no invented technology bonuses**.
 
 **Corvette Technology Optimizer** now mirrors functional construction modules in the technology grid as soon as they are added to the Corvette manifest. Reactor types, weapon arrays, engines, shields, landing systems, cockpit, and relevant habitation modules can produce individual construction-linked technology tiles. Additional physical copies beyond each supported tech contribution are tracked as non-tech copies; purely decorative and interior parts do not create technology tiles. These construction tiles are reserved in the grid before optional rolled starship upgrades.
 
@@ -79,7 +79,7 @@ In particular:
 - The Corvette schematic **does not** simulate full 3D placement, snapping, collision, ship dimensions, or workshop validation. Its essential-parts checklist is a planning check, not proof that a ship can be built exactly as drawn.
 - Corvette construction-to-technology mappings are **planning approximations**, not a direct readout of your in-game inventory. Some parts compete for tech slots, and installation order, class caps and game updates/bugs can change what is shown. Check the Corvette's actual technology inventory after construction.
 - A Corvette reactor's effect on flight statistics **does not imply adjacency synergy** with the corresponding starship system. Unverified relationships are labeled as functional links and are not scored as adjacency bonuses.
-- The Corvette construction catalog is **curated rather than exhaustive**; it does not include every cosmetic, decorative, or structural part.
+- The expanded Corvette construction catalog is still **not guaranteed exhaustive**, especially for the launch-day Forsaken biomechanical items whose individual names have not been published. The additional historical visual and structural names come from community part catalogs; the app never assumes their unverified stats, snap rules, or technology effects.
 - It **does not** provide a dedicated Living Ship organic-technology optimizer.
 - Some upgrades are mission-, expedition-, ship-, or progression-specific. Catalog availability does not mean an item is currently obtainable in every save.
 

@@ -50,3 +50,15 @@
 /* Player-controlled Corvette weapon selection priority. */
 .cv-weapon-priority { margin: 0 0 12px; color: var(--text-secondary, #b5c3d1); font-size: 12px; line-height: 1.6; }
 .cv-weapon-priority strong { color: var(--at-theme-label, #86d9ff); }
+
+/* Expanded Corvette catalog: one coherent searchable library rather than a long unsorted list. */
+.cv-catalog-tools{display:grid;gap:9px;grid-template-columns:minmax(0,1fr);margin-top:13px}
+.cv-catalog-tools label{display:grid;gap:5px;font-size:10px;font-weight:750;color:#a6c8d1}
+.cv-catalog-tools .control{width:100%;min-width:0;padding:10px 11px}
+.cv-catalog-summary{border:1px solid #305b64;background:#102e37;color:#b0e4db;border-radius:7px;padding:10px 11px;font-size:10px;line-height:1.5;margin-top:12px}
+.cv-catalog-empty{font-size:11px;line-height:1.5;padding:12px;color:#b4d7d5;border:1px dashed #426474;border-radius:8px}
+.cv-catalog-empty[hidden]{display:none}
+.cv-group h4{position:sticky;top:0;background:#0c2030;z-index:1;border-radius:3px}
+.cv-part[data-cv-qty]:not([data-cv-qty="0"]){border-color:#448879;background:#12392f}
+.cv-part.filtered-out,.cv-group.filtered-out{display:none!important}
+@media(min-width:1480px){.cv-workspace{grid-template-columns:minmax(285px,330px) minmax(0,1fr) minmax(230px,270px)}}

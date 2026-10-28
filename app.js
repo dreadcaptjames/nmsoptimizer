@@ -443,7 +443,7 @@ function renderCorvette(){
    const selectedCount=list.reduce((n,x)=>n+(p.counts[x.id]||0),0);
    return `<section class="cv-group" data-cv-group="${esc(section)}"><h4>${esc(section)} <span>${selectedCount} selected</span></h4>
     ${list.map(part=>{const qty=p.counts[part.id]||0;
-     return `<div class="cv-part" data-cv-search="${esc((part.name+' '+section+' '+part.group).toLowerCase())}"><button type="button" class="cv-part-title" data-action="cv-select" data-part="${esc(part.id)}" title="Inspect ${esc(part.name)}"><span class="cv-part-icon">${ICONS.render(part.icon,'family-glyph')}</span><span><strong>${esc(part.name)}</strong><small>${esc(part.kind==='interior'?'Interior furnishing':part.group)}${linked.statuses[part.id]?.represented?` · ${linked.statuses[part.id].represented} tech` :''}</small></span></button><div class="cv-stepper"><button type="button" data-action="cv-minus" data-part="${esc(part.id)}" aria-label="Remove one ${esc(part.name)}" ${qty===0?'disabled':''}>−</button><output aria-label="Quantity">${qty}</output><button type="button" data-action="cv-plus" data-part="${esc(part.id)}" aria-label="Add one ${esc(part.name)}" ${qty===part.limit?'disabled':''}>+</button></div></div>`;
+     return `<div class="cv-part" data-cv-search="${esc((part.name+' '+section+' '+part.group+' '+part.description+' '+part.era).toLowerCase())}" data-cv-tab="${esc(part.tab)}" data-cv-era="${esc(part.era)}" data-cv-qty="${qty}"><button type="button" class="cv-part-title" data-action="cv-select" data-part="${esc(part.id)}" title="Inspect ${esc(part.name)}"><span class="cv-part-icon">${ICONS.render(part.icon,'family-glyph')}</span><span><strong>${esc(part.name)}</strong><small>${esc(part.provisional?'Planning placeholder · unverified':part.kind==='interior'?'Interior furnishing':part.group==='appearance'?'Physical / visual component':part.group)}${linked.statuses[part.id]?.represented?` · ${linked.statuses[part.id].represented} tech` :''}</small></span></button><div class="cv-stepper"><button type="button" data-action="cv-minus" data-part="${esc(part.id)}" aria-label="Remove one ${esc(part.name)}" ${qty===0?'disabled':''}>−</button><output aria-label="Quantity">${qty}</output><button type="button" data-action="cv-plus" data-part="${esc(part.id)}" aria-label="Add one ${esc(part.name)}" ${qty===part.limit?'disabled':''}>+</button></div></div>`;
     }).join('')}</section>`;
  }).join('');
  app.innerHTML=`${chrome(key)}
@@ -451,7 +451,7 @@ function renderCorvette(){
     <div class="loadout-identity"><span class="loadout-badge">${ICONS.render('corvette','gear-glyph')}</span><div><div class="eyebrow">ACTIVE PROFILE / CORVETTE WORKSHOP</div><h2>${esc(p.name||'My Corvette')} <span class="class-badge">${esc(p.cls)}-CLASS</span></h2><p>Modular construction · Habitable ship · Conceptual layout</p></div></div>
     <div class="loadout-status ${stats.ready&&stats.exterior?'ready':''}"><span class="status-dot"></span>${esc(corvetteStatus(p,stats))}</div>
   </section>
-  <aside class="forsaken-note cv-forsaken-note" aria-label="Forsaken Corvette update"><span class="forsaken-tag">LATEST UPDATE · FORSAKEN 7.10</span><div><strong>New corvette designs are here</strong><p>Browse Vantage, Hornet, Viper and Mantis cockpits plus Legion-class interiors. New biomechanical hulls and habs are included as <b>labeled placeholders</b> until exact part names are verified. Forsaken traders exchange modules for haunting mementos. No unverified SC or adjacency bonuses have been added.</p><p class="forsaken-sub">Find mementos at infested outposts, hulks, derelict freighters and planetary digsites. Space courier contracts require a Corvette and a Gravitino Coil.</p></div><a href="https://www.nomanssky.com/forsaken-update/" target="_blank" rel="noopener noreferrer">Full 7.10 notes ↗</a></aside>
+  <aside class="forsaken-note cv-forsaken-note" aria-label="Forsaken Corvette update"><span class="forsaken-tag">LATEST UPDATE · FORSAKEN 7.10</span><div><strong>New corvette designs are here</strong><p>Explore four new cockpit families and Legion interiors, alongside an expanded reference catalog of earlier Corvette pieces. New biomechanical hulls and unnamed habs remain <b>clearly labeled planning placeholders</b> until their individual in-game names are verified. Forsaken traders exchange modules for haunting mementos. No unverified SC or adjacency bonuses have been added.</p><p class="forsaken-sub">Find mementos at infested outposts, hulks, derelict freighters and planetary digsites. Space courier contracts require a Corvette and a Gravitino Coil.</p></div><a href="https://www.nomanssky.com/forsaken-update/" target="_blank" rel="noopener noreferrer">Full 7.10 notes ↗</a></aside>
   <div class="cv-metrics">
    <div class="metric"><span class="metric-icon">◈</span><div><div class="metric-name">EXTERIOR MODULES</div><div class="metric-value">${stats.exterior}</div></div></div>
    <div class="metric"><span class="metric-icon">⌂</span><div><div class="metric-name">INTERIOR AMENITIES</div><div class="metric-value">${stats.interior}</div></div></div>
@@ -461,7 +461,9 @@ function renderCorvette(){
   <div class="cv-workspace">
    <aside class="panel cv-library">
     <div class="panel-heading"><div><span class="eyebrow">01 / CORVETTE MODULES</span><h3>Construction catalog</h3></div><small>${CV.parts.length} catalog entries</small></div>
-    <div class="cv-library-inner"><p class="cv-help">Adjust quantities for the modules you own or plan to obtain. All counts start empty; nothing is added automatically.</p><label class="sr-only" for="cv-search">Search Corvette modules</label><input id="cv-search" class="control" type="search" placeholder="Search parts or systems" value="${esc(corvetteQuery)}" autocomplete="off"><div class="cv-catalog" id="cv-catalog">${partsHtml}</div></div>
+    <div class="cv-library-inner"><p class="cv-help">Plan from the expanded Corvette catalog. Confirmed older part names are organized by function; newly added Forsaken families are separated from unverified biomechanical pieces. No extra technology stats are assumed.</p>
+       <div class="cv-catalog-tools"><label for="cv-category">Browse parts<select id="cv-category" class="control">${[['all','All parts'],['selected','In my plan'],['forsaken','Forsaken 7.10'],['systems','Flight systems'],['hull','Hull & plating'],['wings','Wings'],['interior','Interiors'],['extras','Attachments & extras']].map(([v,l])=>`<option value="${v}" ${corvetteFilter===v?'selected':''}>${l}</option>`).join('')}</select></label><label for="cv-search">Find a part<input id="cv-search" class="control" type="search" placeholder="Search by name or type" value="${esc(corvetteQuery)}" autocomplete="off"></label></div>
+       <div class="cv-catalog-summary" id="cv-catalog-summary" role="status" aria-live="polite"></div><div class="cv-catalog" id="cv-catalog">${partsHtml}</div><p class="cv-catalog-empty" id="cv-catalog-empty" hidden>No parts match this filter. Try All parts or clear your search.</p></div>
    </aside>
    <main class="cv-main">
     <section class="panel cv-planner"><div class="planner-head"><div><span class="eyebrow">02 / WORKSHOP CONFIGURATION</span><h2>Build your Corvette</h2><p class="helper">Create a suggested starter manifest or assemble your own. Export to keep your work after this visit.</p></div></div>
@@ -495,18 +497,24 @@ function renderCorvette(){
    </aside>
   </div>
   <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
- if(corvetteQuery)applyCorvetteSearch();
+ applyCorvetteSearch();
 }
 let corvetteQuery='';
+let corvetteFilter='all';
 function applyCorvetteSearch(){
  const root=document.getElementById('cv-catalog');if(!root||!root.querySelectorAll)return;
- const q=corvetteQuery.toLowerCase().trim();
+ const q=corvetteQuery.toLowerCase().trim();let shown=0;
  root.querySelectorAll('.cv-group').forEach(group=>{
   let visible=0;group.querySelectorAll('.cv-part').forEach(el=>{
-   const match=!q||el.dataset.cvSearch.includes(q);el.classList.toggle('filtered-out',!match);if(match)visible++;
+   const matchesCategory=corvetteFilter==='all'||(corvetteFilter==='selected'?Number(el.dataset.cvQty)>0:el.dataset.cvTab===corvetteFilter);
+   const match=matchesCategory&&(!q||el.dataset.cvSearch.includes(q));el.classList.toggle('filtered-out',!match);
+   if(match){visible++;shown++;}
   });group.classList.toggle('filtered-out',visible===0);
  });
+ const summary=document.getElementById('cv-catalog-summary');if(summary)summary.textContent=shown+' matching module'+(shown===1?'':'s')+' · '+(corvetteFilter==='forsaken'?'Some Forsaken parts await confirmed names.':'No invented technology bonuses.');
+ const empty=document.getElementById('cv-catalog-empty');if(empty)empty.hidden=shown>0;
 }
+
 function corvetteMutate(partId,increment){
  const part=CV.byId[partId],p=state.equipment.corvette;if(!part)return;
  const old=p.counts[partId]||0,next=Math.min(part.limit,Math.max(0,old+increment));
@@ -715,6 +723,7 @@ app.addEventListener('change',event=>{
   if(t.id==='import-file'){importJSON(t.files&&t.files[0]);return;}
   if(key==='corvette'){
     const p=state.equipment.corvette;
+    if(t.id==='cv-category'){corvetteFilter=['all','selected','forsaken','systems','hull','wings','interior','extras'].includes(t.value)?t.value:'all';applyCorvetteSearch();return;}
     if(t.id==='cv-goal'&&CV.goals[t.value]){p.goal=t.value;save();render();return;}
     if(t.id==='cv-style'&&['Titan','Ambassador','Thunderbird','Mixed','Forsaken'].includes(t.value)){p.style=t.value;save();render();return;}
     if(t.id==='cv-class'&&['C','B','A','S'].includes(t.value)){p.cls=t.value;p.tech.cls=t.value;p.tech.sc=p.tech.sc.slice(0,wantedSC('starship',p.cls));p.tech.dirty=!!p.tech.optimized&&!!p.tech.layout;save();render();return;}
