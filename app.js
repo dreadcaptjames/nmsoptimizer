@@ -18,6 +18,28 @@ const cvTechGoals=Object.fromEntries(Object.entries(DATA.gear.starship.goals).ma
   'cv-cockpit':0,'cv-hab':0,'cv-deadeye':goal.weights.photon||1}
 }]));
 const cvTechGear={...DATA.gear.starship,name:'Corvette technology',families:cvTechFamilies,goals:cvTechGoals};
+const cvWeaponFamilies=['photon','beam','rockets','cyclotron','infra','cv-deadeye'];
+// The standard starship preset picks Infra-Knife for combat. Corvette planning
+// must never inherit that weapon: the installed / explicitly checked gun wins.
+function chosenCorvetteWeapon(p){
+ const installed=Object.entries(p.counts||{}).filter(([id,count])=>count>0&&CV.weaponFamilyByPart[id]).map(([id])=>CV.weaponFamilyByPart[id]);
+ const enabled=(p.tech?.enabled||[]).filter(id=>cvWeaponFamilies.includes(id));
+ if(p.primaryWeapon!=='auto'&&(installed.includes(p.primaryWeapon)||enabled.includes(p.primaryWeapon)))return p.primaryWeapon;
+ return installed[0]||enabled[0]||null;
+}
+function corvetteGearForProfile(p){
+ const chosen=chosenCorvetteWeapon(p);
+ if(!chosen)return cvTechGear;
+ // Reward the player's actual primary weapon, not a hard-coded weapon ranking.
+ // This is still a relative layout priority, never an in-game DPS claim.
+ const goals=Object.fromEntries(Object.entries(cvTechGoals).map(([id,g])=>{
+  const weights={...g.weights};
+  weights[chosen]=Math.max(0,...Object.values(weights))+3;
+  return [id,{...g,weights}];
+ }));
+ return {...cvTechGear,goals};
+}
+
 let cvTechMode='charge';
 const app=document.getElementById('app');
 let editing='move',selectedCell=null,activeTile=null,toastTimer=null;
@@ -104,7 +126,8 @@ function syncCorvetteTechnology(tech,counts,oldLayout=tech.layout){
 function corvetteTechProfile(raw,cls='S',counts={}){
   const profile=normalizeProfile('starship',raw||null);
   profile.cls=cls;
-  if(!raw){profile.cols=10;profile.rows=6;profile.sc=[];profile.scExample=false;profile.layout=null;profile.dirty=false;}
+  if(!raw){profile.cols=10;profile.rows=6;profile.sc=[];profile.scExample=false;profile.layout=null;profile.dirty=false;
+    profile.enabled=profile.enabled.filter(id=>!cvWeaponFamilies.includes(id));}
   profile.optimized=!!raw?.optimized || !!(raw?.layout?.tiles||[]).some(x=>x?.role==='upgrade');
   profile.enabled=profile.enabled.filter(id=>cvSharedFamilies.includes(id)&&!!cvTechGear.families[id]);
   profile.addons=validAddons(cvTechGear,profile.addons,profile.vehicle);
@@ -323,6 +346,7 @@ function render(){
       <div class="loadout-identity"><span class="loadout-badge">${ICONS.render(gear.icon,'gear-glyph')}</span><div><div class="eyebrow">ACTIVE PROFILE / ${esc(gear.name.toUpperCase())}</div><h2>${esc(profile.name.trim()||gear.name)} <span class="class-badge">${esc(profile.cls)}-CLASS</span></h2><p>${esc(gear.subtitle)}${gear.vehicleOptions?' · '+esc(gear.vehicleOptions[profile.vehicle]):''}</p></div></div>
       <div class="loadout-status ${profile.layout&&!profile.dirty?'ready':''}"><span class="status-dot"></span>${esc(status(profile))}</div>
     </section>
+    ${key==='multitool'?`<aside class="forsaken-note" aria-label="Forsaken update for Multi-Tools"><span class="forsaken-tag">NEW IN 7.10 · FORSAKEN</span><div><strong>Larva Cannon Multi-Tool</strong><p>Forsaken traders offer this living Multi-Tool in exchange for preserved grubs. The Larva Cannon is an equipment choice, <em>not a standalone technology module</em>: use this workbench to arrange its actual installed weapons and utilities. A new radial weapon selector is also available in-game.</p></div><a href="https://www.nomanssky.com/forsaken-update/" target="_blank" rel="noopener noreferrer">Official patch notes ↗</a></aside>`:''}
     <div class="workspace">
       <aside class="panel config-panel ${configOpen?'is-open':''}" id="config-panel">
         <div class="panel-heading"><div><div class="eyebrow">01 / CONFIGURE</div><h3>Loadout setup</h3></div><button class="collapse-button" data-action="panel" data-panel="config" aria-expanded="${configOpen}" aria-controls="config-body"><span class="when-closed">Open settings ⌄</span><span class="when-open">Close settings ⌃</span></button></div>
@@ -378,7 +402,7 @@ function render(){
 }
 function corvetteStatus(p,stats){return !stats.exterior&&!stats.interior?'No build yet':p.generated&&!p.dirty?'Starter plan ready':p.generated?'Customized plan':'Custom draft';}
 function renderCorvetteTech(p){
- const t=p.tech,scCount=wantedSC('starship',p.cls),stat=t.optimized&&t.layout?SOLVER.summarize(t.layout,cvTechGear,t):null;
+ const t=p.tech,scCount=wantedSC('starship',p.cls),techGear=corvetteGearForProfile(p),primary=chosenCorvetteWeapon(p),stat=t.optimized&&t.layout?SOLVER.summarize(t.layout,techGear,t):null;
  const linked=CV.technologyManifest(p.counts),placed=t.layout?.tiles||[],pending=(t.layout?.skipped||[]).filter(x=>x.role==='construction');
  const links=linked.tiles.reduce((map,item)=>{const key=item.relationLabel||'Other Corvette system';
   (map[key]||=[]).push(item);return map;},{});
@@ -392,7 +416,8 @@ function renderCorvetteTech(p){
   <div class="planner-head"><div><span class="eyebrow">05 / SUPERCHARGED SYSTEMS</span><h2>Corvette technology optimizer</h2><p class="helper">Construction modules now create their corresponding technology tiles here immediately. Mark the purple coordinates in your <strong>actual Corvette inventory</strong>, then Optimize to arrange installed parts and selected starship upgrades together.</p></div></div>
   <div class="cv-link-summary"><strong>◈ Linked construction technology · ${linked.tiles.length} modeled tiles</strong><span>${Object.keys(links).length?Object.entries(links).map(([key,items])=>`<span class="cv-link-pill"><b>${esc(key)}</b> ×${items.length}</span>`).join(''):'Add a functional Corvette part to populate its technology slots.'}</span><p>Reactor ↔ flight-system links describe the statistic affected, <em>not</em> an unverified adjacency bonus. Only modeled same-family tile edges receive adjacency points.</p></div>
   <div class="cv-grid-legend"><span><b class="cv-legend-swatch cv-installed"></b> Linked construction tile</span><span><b class="cv-legend-swatch cv-synergy"></b> Modeled adjacency</span><span><b class="cv-legend-swatch cv-functional"></b> Related flight system (not necessarily adjacency)</span></div>
-  <div class="cv-tech-options"><label>Technology goal<select id="cv-tech-goal" class="control">${Object.entries(cvTechGear.goals).map(([id,g])=>`<option value="${id}" ${t.goal===id?'selected':''}>${esc(g.label)}</option>`).join('')}</select></label><label>Upgrade modules<select id="cv-tech-depth" class="control">${[1,2,3].map(n=>`<option value="${n}" ${t.depth===n?'selected':''}>${n} per family</option>`).join('')}</select></label><label>Grid columns<select id="cv-tech-cols" class="control">${[6,7,8,9,10].map(n=>`<option value="${n}" ${t.cols===n?'selected':''}>${n}</option>`).join('')}</select></label><label>Grid rows<select id="cv-tech-rows" class="control">${[3,4,5,6].map(n=>`<option value="${n}" ${t.rows===n?'selected':''}>${n}</option>`).join('')}</select></label></div>
+  <div class="cv-tech-options"><label>Technology goal<select id="cv-tech-goal" class="control">${Object.entries(cvTechGear.goals).map(([id,g])=>`<option value="${id}" ${t.goal===id?'selected':''}>${esc(g.label)}</option>`).join('')}</select></label><label>Primary weapon priority<select id="cv-primary-weapon" class="control"><option value="auto" ${p.primaryWeapon==='auto'?'selected':''}>Auto · installed weapon</option>${cvWeaponFamilies.map(id=>`<option value="${id}" ${p.primaryWeapon===id?'selected':''}>${esc(cvTechGear.families[id]?.name||id)}</option>`).join('')}</select></label><label>Upgrade modules<select id="cv-tech-depth" class="control">${[1,2,3].map(n=>`<option value="${n}" ${t.depth===n?'selected':''}>${n} per family</option>`).join('')}</select></label><label>Grid columns<select id="cv-tech-cols" class="control">${[6,7,8,9,10].map(n=>`<option value="${n}" ${t.cols===n?'selected':''}>${n}</option>`).join('')}</select></label><label>Grid rows<select id="cv-tech-rows" class="control">${[3,4,5,6].map(n=>`<option value="${n}" ${t.rows===n?'selected':''}>${n}</option>`).join('')}</select></label></div>
+  <p class="cv-weapon-priority">${primary?`Primary weapon: <strong>${esc(cvTechGear.families[primary]?.name||primary)}</strong>. Its selected or construction-linked modules receive weapon priority.`:'No Corvette weapon selected yet. Add a weapon in the construction catalog or check a shared weapon below.'} ${p.primaryWeapon!=='auto'&&!primary?'Your preferred weapon is not installed or enabled yet.':''} Weapon choices are not changed automatically when switching technology goals.</p>
   <details class="cv-tech-library"><summary>Choose shared starship technology & blueprints (${t.enabled.length} families)</summary><div class="cv-tech-families">${groups}</div></details>
   <div class="cv-tech-toolbar"><strong>SC positions: ${t.sc.length}/${scCount}</strong><button type="button" class="mode ${cvTechMode==='charge'?'active':''}" data-action="cv-tech-mode" data-mode="charge">✦ Mark SC</button><button type="button" class="mode ${cvTechMode==='move'?'active':''}" data-action="cv-tech-mode" data-mode="move">⤧ Move tech</button><button type="button" class="mode ${cvTechMode==='lock'?'active':''}" data-action="cv-tech-mode" data-mode="lock">▧ Lock slots</button><button type="button" class="mode subtle" data-action="cv-tech-clear-sc">Clear SC</button></div>
   <div class="grid-frame cv-tech-frame"><div class="grid-utility"><span><span class="live-dot"></span> CORVETTE TECH MATRIX</span><span>${t.cols} × ${t.rows} · ${t.sc.length} marked SC</span></div><div class="grid-scroll"><div class="tech-grid" style="--columns:${t.cols}" role="group" aria-label="Corvette technology inventory">${Array.from({length:t.cols*t.rows},(_,i)=>renderCell(i,cvTechGear,t,'cv-tech-cell')).join('')}</div></div></div>
@@ -403,7 +428,7 @@ function renderCorvetteTech(p){
   ${t.layout&&!t.optimized?'<div class="cv-tech-auto-state">Construction-linked modules are showing in the grid. Their positions are provisional until you choose <strong>Optimize Corvette tech</strong>.</div>':''}
   ${!t.sc.length?'<div class="notice warning"><strong>No supercharged slots marked yet.</strong> The optimizer can still group adjacent technology, but cannot prioritize purple slots until you mark real positions.</div>':''}
   <div class="cv-tech-toolbar cv-tech-actions"><button type="button" class="btn primary" data-action="cv-tech-optimize">✧ Optimize Corvette tech ↗</button><button type="button" class="btn quiet" data-action="cv-tech-clear-layout">Clear tech layout</button></div>
-  ${stat?`<div class="cv-tech-result"><strong>✦ SC impact: +${Math.round(stat.scScore)} planning points · ${stat.effectiveSC}/${t.sc.length} useful purple slots</strong><span>SC strategy: ${esc(cvTechGear.families[SOLVER.superchargedPlan(t.layout.tiles,cvTechGear,cvTechGear.goals[t.goal],t.sc.length).focusFamily]?.name||'No eligible family')} first, then remaining eligible families; adjacency afterwards.</span><span>Adjacency: +${Math.round(stat.adjacencyScore)} · ${stat.connections} links</span>${assignments||'<p>Mark SC slots to receive placement recommendations.</p>'}<p>These are relative planning scores, not in-game percentages or DPS. U1 assumes your strongest roll. Verify real Corvette technology, class limits, construction order and actual stats in-game.</p></div>`:''}
+  ${stat?`<div class="cv-tech-result"><strong>✦ SC impact: +${Math.round(stat.scScore)} planning points · ${stat.effectiveSC}/${t.sc.length} useful purple slots</strong><span>SC strategy: ${esc(cvTechGear.families[SOLVER.superchargedPlan(t.layout.tiles,techGear,techGear.goals[t.goal],t.sc.length).focusFamily]?.name||'No eligible family')} first, then remaining eligible families; adjacency afterwards.</span><span>Adjacency: +${Math.round(stat.adjacencyScore)} · ${stat.connections} links</span>${assignments||'<p>Mark SC slots to receive placement recommendations.</p>'}<p>These are relative planning scores, not in-game percentages or DPS. U1 assumes your strongest roll. Verify real Corvette technology, class limits, construction order and actual stats in-game.</p></div>`:''}
  </section>`;
 }
 function renderCorvette(){
@@ -426,6 +451,7 @@ function renderCorvette(){
     <div class="loadout-identity"><span class="loadout-badge">${ICONS.render('corvette','gear-glyph')}</span><div><div class="eyebrow">ACTIVE PROFILE / CORVETTE WORKSHOP</div><h2>${esc(p.name||'My Corvette')} <span class="class-badge">${esc(p.cls)}-CLASS</span></h2><p>Modular construction · Habitable ship · Conceptual layout</p></div></div>
     <div class="loadout-status ${stats.ready&&stats.exterior?'ready':''}"><span class="status-dot"></span>${esc(corvetteStatus(p,stats))}</div>
   </section>
+  <aside class="forsaken-note cv-forsaken-note" aria-label="Forsaken Corvette update"><span class="forsaken-tag">LATEST UPDATE · FORSAKEN 7.10</span><div><strong>New corvette designs are here</strong><p>Browse Vantage, Hornet, Viper and Mantis cockpits plus Legion-class interiors. New biomechanical hulls and habs are included as <b>labeled placeholders</b> until exact part names are verified. Forsaken traders exchange modules for haunting mementos. No unverified SC or adjacency bonuses have been added.</p><p class="forsaken-sub">Find mementos at infested outposts, hulks, derelict freighters and planetary digsites. Space courier contracts require a Corvette and a Gravitino Coil.</p></div><a href="https://www.nomanssky.com/forsaken-update/" target="_blank" rel="noopener noreferrer">Full 7.10 notes ↗</a></aside>
   <div class="cv-metrics">
    <div class="metric"><span class="metric-icon">◈</span><div><div class="metric-name">EXTERIOR MODULES</div><div class="metric-value">${stats.exterior}</div></div></div>
    <div class="metric"><span class="metric-icon">⌂</span><div><div class="metric-name">INTERIOR AMENITIES</div><div class="metric-value">${stats.interior}</div></div></div>
@@ -434,7 +460,7 @@ function renderCorvette(){
   </div>
   <div class="cv-workspace">
    <aside class="panel cv-library">
-    <div class="panel-heading"><div><span class="eyebrow">01 / CORVETTE MODULES</span><h3>Construction catalog</h3></div><small>${CV.parts.length} named parts</small></div>
+    <div class="panel-heading"><div><span class="eyebrow">01 / CORVETTE MODULES</span><h3>Construction catalog</h3></div><small>${CV.parts.length} catalog entries</small></div>
     <div class="cv-library-inner"><p class="cv-help">Adjust quantities for the modules you own or plan to obtain. All counts start empty; nothing is added automatically.</p><label class="sr-only" for="cv-search">Search Corvette modules</label><input id="cv-search" class="control" type="search" placeholder="Search parts or systems" value="${esc(corvetteQuery)}" autocomplete="off"><div class="cv-catalog" id="cv-catalog">${partsHtml}</div></div>
    </aside>
    <main class="cv-main">
@@ -442,11 +468,11 @@ function renderCorvette(){
      <div class="cv-settings">
        <label>Ship name<input id="cv-name" class="control" maxlength="80" placeholder="My Corvette" value="${esc(p.name)}"></label>
        <label>Build focus<select id="cv-goal" class="control">${Object.entries(CV.goals).map(([id,g])=>`<option value="${id}" ${p.goal===id?'selected':''}>${esc(g.label)}</option>`).join('')}</select></label>
-       <label>Design family<select id="cv-style" class="control">${['Titan','Ambassador','Thunderbird','Mixed'].map(v=>`<option value="${v}" ${p.style===v?'selected':''}>${v}</option>`).join('')}</select></label>
+       <label>Design family<select id="cv-style" class="control">${['Titan','Ambassador','Thunderbird','Mixed','Forsaken'].map(v=>`<option value="${v}" ${p.style===v?'selected':''}>${v}</option>`).join('')}</select></label>
        <label>Current ship class<select id="cv-class" class="control">${['C','B','A','S'].map(v=>`<option value="${v}" ${p.cls===v?'selected':''}>${v}-class</option>`).join('')}</select></label>
      </div>
      <div class="cv-toolbar"><button class="btn primary" data-action="cv-generate">✧ Generate starter plan ↗</button><button class="btn" data-action="cv-copy">⧉ Copy manifest</button><button class="btn quiet warn" data-action="cv-reset">Reset Corvette</button></div>
-     <div class="cv-assignment-note">${esc(goal.tip)} Changing the focus or design family does not replace your current plan. Generate only when you're ready.</div>
+     <div class="cv-assignment-note">${esc(goal.tip)} <strong>Starter-plan weapon:</strong> ${esc(CV.byId[CV.weaponPartByFamily[p.primaryWeapon]||Object.keys(p.counts).find(id=>p.counts[id]>0&&CV.weaponFamilyByPart[id]===chosenCorvetteWeapon(p))||'photon-array']?.name||'Photon Cannon Array')}. Changing the focus or design family does not replace your current plan. Generate only when you're ready.</div>
      <div class="cv-ship-panel"><div class="cv-ship-head"><span class="eyebrow">03 / SCHEMATIC OVERVIEW</span><span>NOT TO SCALE · NO SNAP VALIDATION</span></div>
        <div class="cv-blueprint">
          <div class="cv-hull-shape" aria-hidden="true"><span>◆</span></div>
@@ -464,7 +490,7 @@ function renderCorvette(){
     <div class="cv-inspector-body">${inspected?`<div class="inspector-card"><div class="inspector-kicker">SELECTED MODULE</div><div class="inspector-title"><span class="family-icon mint">${ICONS.render(inspected.icon,'family-glyph')}</span><div><strong>${esc(inspected.name)}</strong><small>${esc(inspected.section)}</small></div></div><p>${esc(inspected.description)}</p><div class="cv-part-system"><strong>${linked.statuses[inspected.id]?.represented?`${linked.statuses[inspected.id].represented} linked technology tile(s)`:'No modeled technology tile'}</strong><span>${esc(linked.statuses[inspected.id]?.relation?.label||'Physical construction or interior module only')}</span>${linked.statuses[inspected.id]?.cosmetic?`<small>${linked.statuses[inspected.id].cosmetic} remaining physical copy/copies modeled as decorative or beyond the supported tech contribution.</small>`:''}</div><div class="inspector-note">${esc(inspected.kind==='interior'?'Interior furnishing — not included in exterior structural count.':'Exterior module — verify availability and attachment rules in the game.')}</div><label class="cv-zone-select">Planning zone<select class="control" data-cv-zone="${esc(inspected.id)}">${['fore','mid','aft'].map(z=>`<option value="${z}" ${(p.zones[inspected.id]||inspected.zone)===z?'selected':''}>${zoneLabel[z]}</option>`).join('')}</select></label></div>`:`<div class="inspect-empty"><span class="inspect-placeholder">${ICONS.render('corvette','gear-glyph')}</span><strong>Nothing selected</strong><p>Choose a module in the catalog to see its details and edit its planned position.</p></div>`}
      <section class="cv-readiness"><h4>Build assessment</h4><p>${stats.ready?'Required systems are represented in this plan. This is not proof of build validity.':'Add all required module groups before attempting to finalize your Corvette.'}</p><div class="cv-priority"><strong>Focus: ${esc(goal.label)}</strong><span>${esc(goal.tip)}</span></div></section>
      <section class="cv-readiness"><h4>Corvette-only mechanics</h4><p>Functional construction parts now produce linked technology tiles automatically. These are separate from the normal three rolled upgrade modules. Reactor relationships identify affected systems without inventing adjacency bonuses; construction order, the class slot cap, and in-game bugs can change what actually appears.</p><p>Interior furnishings use a different construction process from exterior modules.</p></section>
-     <section class="cv-reference"><a href="https://www.nomanssky.com/voyagers-update/" target="_blank" rel="noopener noreferrer">Voyagers Corvette Workshop ↗</a><a href="https://www.nomanssky.com/cosmos-update/" target="_blank" rel="noopener noreferrer">Cosmos Tractor Beam ↗</a><a href="https://www.nomansskyresources.com/corvette-parts" target="_blank" rel="noopener noreferrer">Browse Corvette parts ↗</a></section>
+     <section class="cv-reference"><a href="https://www.nomanssky.com/voyagers-update/" target="_blank" rel="noopener noreferrer">Voyagers Corvette Workshop ↗</a><a href="https://www.nomanssky.com/cosmos-update/" target="_blank" rel="noopener noreferrer">Cosmos Tractor Beam ↗</a><a href="https://www.nomansskyresources.com/corvette-parts" target="_blank" rel="noopener noreferrer">Browse Corvette parts ↗</a><a href="https://www.nomanssky.com/forsaken-update/" target="_blank" rel="noopener noreferrer">Forsaken 7.10 patch notes ↗</a></section>
     </div>
    </aside>
   </div>
@@ -487,6 +513,8 @@ function corvetteMutate(partId,increment){
  if(next===old)return;
  if(part.group==='cockpit'&&next>0){for(const other of CV.parts.filter(item=>item.group==='cockpit'&&item.id!==partId))delete p.counts[other.id];}
  if(next)p.counts[partId]=next;else delete p.counts[partId];
+ if(next>old&&CV.weaponFamilyByPart[partId])p.primaryWeapon=CV.weaponFamilyByPart[partId];
+ if(!next&&CV.weaponFamilyByPart[partId]===p.primaryWeapon&&!Object.entries(p.counts).some(([id,count])=>count>0&&CV.weaponFamilyByPart[id]===p.primaryWeapon)&&!p.tech.enabled.includes(p.primaryWeapon))p.primaryWeapon='auto';
  p.selected=partId;p.dirty=!!p.generated;syncCorvetteTechnology(p.tech,p.counts);p.tech.dirty=!!p.tech.optimized&&!!p.tech.layout;save();render();
 }
 function corvetteTechChanged(){const p=state.equipment.corvette.tech;p.dirty=!!p.optimized&&!!p.layout;save();render();}
@@ -516,14 +544,16 @@ function handleCorvetteClick(action,d){const p=state.equipment.corvette;
  if(action==='cv-tech-clear-sc'){p.tech.sc=[];corvetteTechChanged();return;}
  if(action==='cv-tech-clear-layout'){p.tech.layout=null;p.tech.optimized=false;syncCorvetteTechnology(p.tech,p.counts);p.tech.dirty=false;selectedCell=null;activeTile=null;save();render();return;}
  if(action==='cv-tech-optimize'){
-  try{p.tech.layout=SOLVER.solve({gear:cvTechGear,profile:p.tech});p.tech.optimized=true;p.tech.dirty=false;cvTechMode='move';selectedCell=null;activeTile=null;save();render();toast('Corvette tech optimized against your marked supercharged positions.');}
+  try{p.tech.layout=SOLVER.solve({gear:corvetteGearForProfile(p),profile:p.tech});p.tech.optimized=true;p.tech.dirty=false;cvTechMode='move';selectedCell=null;activeTile=null;save();render();toast('Corvette tech optimized against your marked supercharged positions.');}
   catch(e){toast(e.message||'Could not optimize Corvette technology.',true);}return;
  }
  if(action==='cv-plus'||action==='cv-minus'){corvetteMutate(d.part,action==='cv-plus'?1:-1);return;}
  if(action==='cv-select'){if(CV.byId[d.part]){p.selected=d.part;save();render();}return;}
  if(action==='cv-generate'){
   if(Object.keys(p.counts).length && !window.confirm('Replace this Corvette manifest with a new starter plan? Your current module quantities will be replaced.'))return;
-  p.counts=CV.generate(p.goal,p.style);p.zones={};p.selected=null;p.generated=true;p.dirty=false;syncCorvetteTechnology(p.tech,p.counts);p.tech.dirty=!!p.tech.optimized&&!!p.tech.layout;save();render();toast('Starter plan generated. Linked construction technology was added to the grid.');return;
+  const installedChoice=Object.keys(p.counts).find(id=>p.counts[id]>0&&CV.weaponFamilyByPart[id]===chosenCorvetteWeapon(p));
+  const chosenPart=CV.weaponPartByFamily[p.primaryWeapon]||installedChoice||'photon-array';
+  p.counts=CV.generate(p.goal,p.style,chosenPart);p.zones={};p.selected=null;p.generated=true;p.dirty=false;syncCorvetteTechnology(p.tech,p.counts);p.tech.dirty=!!p.tech.optimized&&!!p.tech.layout;save();render();toast('Starter plan generated. Linked construction technology was added to the grid.');return;
  }
  if(action==='cv-reset'){if(window.confirm('Reset the Corvette manifest and settings?')){state.equipment.corvette=defaultProfile('corvette');cvTechMode='charge';selectedCell=null;activeTile=null;save();render();toast('Corvette profile reset.');}return;}
  if(action==='cv-copy'){
@@ -686,10 +716,11 @@ app.addEventListener('change',event=>{
   if(key==='corvette'){
     const p=state.equipment.corvette;
     if(t.id==='cv-goal'&&CV.goals[t.value]){p.goal=t.value;save();render();return;}
-    if(t.id==='cv-style'&&['Titan','Ambassador','Thunderbird','Mixed'].includes(t.value)){p.style=t.value;save();render();return;}
+    if(t.id==='cv-style'&&['Titan','Ambassador','Thunderbird','Mixed','Forsaken'].includes(t.value)){p.style=t.value;save();render();return;}
     if(t.id==='cv-class'&&['C','B','A','S'].includes(t.value)){p.cls=t.value;p.tech.cls=t.value;p.tech.sc=p.tech.sc.slice(0,wantedSC('starship',p.cls));p.tech.dirty=!!p.tech.optimized&&!!p.tech.layout;save();render();return;}
     if(t.id==='cv-name'){p.name=t.value.trim().slice(0,80);save();render();return;}
-    if(t.id==='cv-tech-goal'&&cvTechGear.goals[t.value]){p.tech.goal=t.value;p.tech.enabled=goalDefaults(cvTechGear,t.value);corvetteTechChanged();return;}
+    if(t.id==='cv-tech-goal'&&cvTechGear.goals[t.value]){p.tech.goal=t.value;corvetteTechChanged();return;}
+    if(t.id==='cv-primary-weapon'&&(t.value==='auto'||cvWeaponFamilies.includes(t.value))){p.primaryWeapon=t.value;corvetteTechChanged();return;}
     if(t.id==='cv-tech-depth'){p.tech.depth=clamp(t.value,1,3);corvetteTechChanged();return;}
     if(t.id==='cv-tech-cols'||t.id==='cv-tech-rows'){
       if(t.id==='cv-tech-cols')p.tech.cols=clamp(t.value,6,10);else p.tech.rows=clamp(t.value,3,6);
@@ -697,7 +728,9 @@ app.addEventListener('change',event=>{
     }
     if(t.dataset?.cvTechFamily){const id=t.dataset.cvTechFamily;if(!cvTechGear.families[id])return;
       if(t.checked&&!p.tech.enabled.includes(id))p.tech.enabled.push(id);
+      if(t.checked&&cvWeaponFamilies.includes(id))p.primaryWeapon=id;
       if(!t.checked)p.tech.enabled=p.tech.enabled.filter(x=>x!==id);
+      if(!t.checked&&p.primaryWeapon===id&&!Object.entries(p.counts).some(([partId,count])=>count>0&&CV.weaponFamilyByPart[partId]===id))p.primaryWeapon='auto';
       corvetteTechChanged();return;
     }
     if(t.dataset?.cvTechAddon){const token=t.dataset.cvTechAddon;const [id,addonId]=token.split(':');

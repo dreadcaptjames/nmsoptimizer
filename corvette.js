@@ -6,6 +6,23 @@ const parts=[
   ['titan-cockpit','Titan-Class Cockpit','Cockpits','cockpit','ship','fore','exterior','Militaristic command module. Only one cockpit can be planned.'],
   ['ambassador-cockpit','Ambassador-Class Cockpit','Cockpits','cockpit','ship','fore','exterior','Minimalist, panoramic cockpit design.'],
   ['thunderbird-cockpit','Thunderbird-Class Cockpit','Cockpits','cockpit','ship','fore','exterior','Outlaw-inspired control module.'],
+  // FORSAKEN 7.10: cockpit families named in official Hello Games patch notes.
+  // Numbered variants are planner identifiers; official individual variant names remain unpublished.
+  ['forsaken-vantage-cockpit','Vantage-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Ultra-wide cockpit with a panoramic view and minimal interior.'],
+  ['forsaken-hornet-cockpit-1','Hornet-Class Cockpit · Variant 1','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
+  ['forsaken-hornet-cockpit-2','Hornet-Class Cockpit · Variant 2','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
+  ['forsaken-hornet-cockpit-3','Hornet-Class Cockpit · Variant 3','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
+  ['forsaken-viper-cockpit-1','Viper-Class Cockpit · Variant 1','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
+  ['forsaken-viper-cockpit-2','Viper-Class Cockpit · Variant 2','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
+  ['forsaken-viper-cockpit-3','Viper-Class Cockpit · Variant 3','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
+  ['forsaken-mantis-cockpit-1','Mantis-Class Cockpit · Variant 1','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
+  ['forsaken-mantis-cockpit-2','Mantis-Class Cockpit · Variant 2','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
+  ['forsaken-mantis-cockpit-3','Mantis-Class Cockpit · Variant 3','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
+  // The patch confirms new habs, hull structures and Legion-class interiors, but not every part name.
+  // Generic hull/hab entries are explicit placeholders, not invented exact in-game item names.
+  ['forsaken-hab-placeholder','Forsaken Hab (planning placeholder)','Forsaken · Hull & interiors','appearance','freighter','mid','exterior','New Forsaken habs are confirmed; individual part names and technology effects are not yet verified. Planning-only hull piece; does not satisfy functional habitation requirement.'],
+  ['forsaken-hull-placeholder','Biomechanical Hull (planning placeholder)','Forsaken · Hull & interiors','appearance','ship','mid','exterior','New biomechanical hull structures are confirmed; individual names, snap rules and technology effects have not been verified. Decorative planning placeholder only.'],
+  ['forsaken-legion-interior','Legion-Class Interior Modules','Forsaken · Hull & interiors','utility','freighter','mid','interior','Forsaken 7.10. Cruiser-style Legion-class habitation interiors with low ceilings and recessed light; plan module quantities as interior furnishings.'],
   ['titan-hab','Titan-Class Hab','Habitation','hab','freighter','mid','exterior','Main walkable habitation volume.'],
   ['ambassador-hab','Ambassador-Class Hab','Habitation','hab','freighter','mid','exterior','Rounded, elegant living quarters.'],
   ['thunderbird-hab','Thunderbird-Class Hab','Habitation','hab','freighter','mid','exterior','Industrial, practical living quarters.'],
@@ -59,12 +76,13 @@ const goals={
  combat:{label:'Combat Corvette',tip:'Build around a valid core, then prioritize weapon variety, defenses and propulsion. In-game rolls still decide actual performance.'},
  range:{label:'Long-range traveller',tip:'Start with reactors and propulsion; size and weight affect handling. Verify real hyperdrive range after assembly.'},
  crew:{label:'Mobile crew base',tip:'Use extra habitation and interior amenities to create a useful walkable home. Interiors are not part of this structural count.'},
- salvage:{label:'Salvage specialist',tip:'Include the Cosmos Tractor Beam and working onboard utilities for recovering and processing cargo.'}
+ salvage:{label:'Salvage specialist',tip:'Include the Cosmos Tractor Beam and working onboard utilities for recovering and processing cargo.'},
+ courier:{label:'Forsaken courier',tip:'Space courier contracts are available at deep-space outposts. The game requires a Corvette and a Gravitino Coil; the coil is not a Corvette construction module. This preset is only a starter manifest.'}
 };
-function defaults(){return{name:'',cls:'S',goal:'balanced',style:'Titan',counts:{},zones:{},generated:false,dirty:false,selected:null};}
+function defaults(){return{name:'',cls:'S',goal:'balanced',style:'Titan',primaryWeapon:'auto',counts:{},zones:{},generated:false,dirty:false,selected:null};}
 function normalize(raw){const p=defaults();if(!raw||typeof raw!=='object')return p;
  p.name=String(raw.name||'').slice(0,80);p.cls=['C','B','A','S'].includes(raw.cls)?raw.cls:'S';
- p.goal=goals[raw.goal]?raw.goal:'balanced';p.style=['Titan','Ambassador','Thunderbird','Mixed'].includes(raw.style)?raw.style:'Titan';
+ p.goal=goals[raw.goal]?raw.goal:'balanced';p.primaryWeapon=['auto','photon','beam','rockets','cyclotron','infra','cv-deadeye'].includes(raw.primaryWeapon)?raw.primaryWeapon:'auto';p.style=['Titan','Ambassador','Thunderbird','Mixed','Forsaken'].includes(raw.style)?raw.style:'Titan';
  for(const part of parts){const val=Number(raw.counts?.[part.id]);if(Number.isInteger(val)&&val>0)p.counts[part.id]=Math.min(val,part.limit);if(['fore','mid','aft'].includes(raw.zones?.[part.id]))p.zones[part.id]=raw.zones[part.id];}
  // Exactly one cockpit, consistent across imports and manual edits.
  const cockpits=parts.filter(t=>t.group==='cockpit'&&p.counts[t.id]);for(const c of cockpits.slice(1))delete p.counts[c.id];
@@ -73,12 +91,14 @@ function normalize(raw){const p=defaults();if(!raw||typeof raw!=='object')return
 function assess(p){const byGroup={};let exterior=0,interior=0;
  for(const part of parts){const count=p.counts[part.id]||0;byGroup[part.group]=(byGroup[part.group]||0)+count;if(part.kind==='interior')interior+=count;else exterior+=count;}
  const missing=required.filter(([id])=>!byGroup[id]);return{missing,byGroup,exterior,interior,ready:missing.length===0};}
-const stylePiece={Titan:['titan-cockpit','titan-hab','titan-bay','titan-booster','titan-wing'],Ambassador:['ambassador-cockpit','ambassador-hab','ambassador-bay','ambassador-booster','ambassador-wing'],Thunderbird:['thunderbird-cockpit','thunderbird-hab','thunderbird-bay','thunderbird-booster','osprey-wing'],Mixed:['titan-cockpit','thunderbird-hab','ambassador-bay','arcadia-booster','arcadia-wing']};
-function generate(goalId,style){const goal=goals[goalId]?goalId:'balanced';const [cockpit,hab,access,engine,wing]=stylePiece[style]||stylePiece.Titan;const counts={[cockpit]:1,[hab]:1,[access]:1,'landing-gear':1,'zenith-reactor':1,[engine]:1,'photon-array':1};
- if(goal==='combat'){counts['infra-knife']=1;counts['ion-barrier']=1;counts['deflector']=1;counts[wing]=2;}
+const stylePiece={Titan:['titan-cockpit','titan-hab','titan-bay','titan-booster','titan-wing'],Ambassador:['ambassador-cockpit','ambassador-hab','ambassador-bay','ambassador-booster','ambassador-wing'],Thunderbird:['thunderbird-cockpit','thunderbird-hab','thunderbird-bay','thunderbird-booster','osprey-wing'],Mixed:['titan-cockpit','thunderbird-hab','ambassador-bay','arcadia-booster','arcadia-wing'],Forsaken:['forsaken-vantage-cockpit','titan-hab','titan-bay','titan-booster','forsaken-hull-placeholder']};
+function generate(goalId,style,weaponPartId='photon-array'){const goal=goals[goalId]?goalId:'balanced';const [cockpit,hab,access,engine,wing]=stylePiece[style]||stylePiece.Titan;const chosenWeapon=parts.some(part=>part.id===weaponPartId&&part.group==='weapon')?weaponPartId:'photon-array';
+ const counts={[cockpit]:1,[hab]:1,[access]:1,'landing-gear':1,'zenith-reactor':1,[engine]:1,[chosenWeapon]:1};
+ if(goal==='combat'){counts['ion-barrier']=1;counts['deflector']=1;counts[wing]=2;}
  else if(goal==='range'){counts['medusa-reactor']=1;counts['ambassador-sublight']=1;counts[wing]=2;counts['deflector']=1;}
  else if(goal==='crew'){counts[hab]=2;counts['mission-radar']=1;counts['nutrition-unit']=1;counts['refiner-unit']=1;counts['med-bay']=1;counts[wing]=2;}
  else if(goal==='salvage'){counts['tractor']=1;counts['refiner-unit']=1;counts['mission-radar']=1;counts['deflector']=1;counts[wing]=1;}
+ else if(goal==='courier'){counts['mission-radar']=1;counts['refiner-unit']=1;counts['deflector']=1;counts[wing]=1;}
  else{counts['deflector']=1;counts[wing]=2;counts['mission-radar']=1;}
  return counts;
 }
@@ -97,6 +117,8 @@ const systemRelations={
  'infra-knife':{family:'infra',link:'infra',label:'Infra-Knife',adjacent:true},
  'deadeye':{family:'cv-deadeye',link:'photon',label:'Deadeye weapon',note:'Special expedition-linked weapon. Its exact adjacency family is not assumed.'}
 };
+const weaponFamilyByPart=Object.fromEntries(Object.entries(systemRelations).filter(([id,relation])=>byId[id]?.group==='weapon').map(([id,relation])=>[id,relation.family]));
+const weaponPartByFamily=Object.fromEntries(Object.entries(weaponFamilyByPart).map(([id,family])=>[family,id]));
 const specialFamilies={
  'cv-zenith':{name:'Zenith Reactor',short:'ZEN',icon:'warpFreighter',color:'violet',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with hyperdrive range; adjacency not assumed.',next:'Check the installed module in-game.'},
  'cv-medusa':{name:'Medusa Reactor',short:'MED',icon:'engine',color:'mint',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with maneuverability; adjacency not assumed.',next:'Check the installed module in-game.'},
@@ -132,7 +154,7 @@ function technologyManifest(counts){
  return {tiles,statuses};
 }
 window.ATLAS_CORVETTE=Object.freeze({parts:Object.freeze(parts),byId:Object.freeze(byId),required:Object.freeze(required),goals:Object.freeze(goals),defaults,normalize,assess,generate,
- technologyManifest,specialFamilies:Object.freeze(specialFamilies)});
+ technologyManifest,weaponFamilyByPart:Object.freeze(weaponFamilyByPart),weaponPartByFamily:Object.freeze(weaponPartByFamily),specialFamilies:Object.freeze(specialFamilies)});
 window.ATLAS_DATA.gear.corvette={name:'Corvette',icon:'corvette',subtitle:'Modular ship assembly & crew systems',placeholder:'My Corvette',kind:'assembly',goals,families:{}};
-window.ATLAS_DATA.sources.push({name:'Voyagers Corvette construction',url:'https://www.nomanssky.com/voyagers-update/'},{name:'Cosmos Tractor Beam',url:'https://www.nomanssky.com/cosmos-update/'});
+window.ATLAS_DATA.sources.push({name:'Forsaken 7.10 official patch notes',url:'https://www.nomanssky.com/forsaken-update/'},{name:'Voyagers Corvette construction',url:'https://www.nomanssky.com/voyagers-update/'},{name:'Cosmos Tractor Beam',url:'https://www.nomanssky.com/cosmos-update/'});
 })();

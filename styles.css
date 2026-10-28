@@ -57,3 +57,14 @@
 .inspector-relationship{padding:.65rem .75rem;border:1px solid rgba(80,174,170,.26);background:rgba(51,143,153,.08);border-radius:.55rem;color:#bcd6d9;font-size:.82rem;line-height:1.5;}
 .inspector-relationship strong{color:#f1fcfc;}
 
+
+/* FORSAKEN 7.10 release intelligence — no gameplay tile styling changed. */
+.forsaken-note{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:0 0 15px;padding:15px 18px;border:1px solid rgba(168,125,238,.43);border-radius:13px;background:linear-gradient(110deg,rgba(89,45,111,.22),rgba(13,26,38,.91));color:#d8e1f0}
+.forsaken-note .forsaken-tag{font-size:10px;font-weight:850;letter-spacing:.14em;color:#d3baff;white-space:nowrap}
+.forsaken-note>div{flex:1 1 270px;min-width:0}
+.forsaken-note strong{display:block;color:#faf2ff;font-size:14px;margin:0 0 5px}
+.forsaken-note p{font-size:11px;line-height:1.7;margin:0;color:#b9c8d4}
+.forsaken-note .forsaken-sub{margin-top:6px;color:#a9bacc}
+.forsaken-note a{display:inline-flex;align-items:center;color:#e1caff;border:1px solid #7859a3;border-radius:8px;text-decoration:none;padding:9px 12px;font-size:11px;font-weight:780;white-space:nowrap}
+.forsaken-note a:hover,.forsaken-note a:focus-visible{background:rgba(153,112,209,.2);text-decoration:underline}
+@media (max-width:660px){.forsaken-note{align-items:flex-start;gap:9px;padding:14px}.forsaken-note .forsaken-tag{flex:1 1 100%}.forsaken-note a{flex:0 1 auto}}

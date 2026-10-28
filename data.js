@@ -2,7 +2,7 @@
    Procedural modules are represented as planning placeholders, not claimed stat rolls.
    Verify game changes against the linked official release log. */
 window.ATLAS_DATA = Object.freeze({
-  release: 'Cosmos 7.06',
+  release: 'Forsaken 7.10',
   sources: [
     { name: 'Hello Games release log', url: 'https://www.nomanssky.com/release-log/' },
     { name: 'NMS Resources • technology layouts', url: 'https://www.nomansskyresources.com/guide-pages/tech-layouts-and-adjacency-bonus' },
