@@ -1,6 +1,6 @@
 # ATLAS MAX
 
-**Game reference: FORSAKEN 7.10 (October 28, 2026), performance-catalog revision October 29, 2026.** The performance-focused Corvette catalog includes official named cockpit variants, three newly identified generators, Dematerialisation Ray, new propulsion and landing hardware, and named Legion/Legionnaire/Gunner habitation parts. Decorative hull/interior pieces are no longer shown in the active catalog. An optional Forsaken design family and courier focus are available. The Multi-Tool workbench includes guidance for the new Larva Cannon chassis. The new warp mechanic and weapon wheel do not create new technology adjacency bonuses, so the existing optimizer adjacency rules remain unchanged. For provenance and open limitations, see `FORSAKEN-7.10-UPDATE.md`.
+**Game reference: FORSAKEN 7.10 (October 28, 2026), Corvette priority correction October 29, 2026.** The performance-focused Corvette catalog includes official named cockpit variants, three newly identified generators, Dematerialisation Ray, new propulsion and landing hardware, and named Legion/Legionnaire/Gunner habitation parts. Decorative hull/interior pieces are no longer shown in the active catalog. An optional Forsaken design family and courier focus are available. The Multi-Tool workbench includes guidance for the new Larva Cannon chassis. The new warp mechanic and weapon wheel do not create new technology adjacency bonuses, so the existing optimizer adjacency rules remain unchanged. For provenance and open limitations, see `FORSAKEN-7.10-UPDATE.md`.
 
 
 **A No Man’s Sky equipment and technology optimization companion**
@@ -8,6 +8,12 @@
 ATLAS MAX is an unofficial, browser-based planning tool for players who want to make better use of their equipment technology slots. It helps you explore upgrade combinations, organize technology around adjacency bonuses, decide what belongs in supercharged slots, and compare possible layouts before recreating them in the game.
 
 It combines a No Man’s Sky-inspired inventory workbench with a streamlined dashboard. Everything is designed for manual, player-controlled experimentation: **changing a setting or selecting a blueprint never generates a new layout on its own.**
+
+## Corvette supercharged-slot priorities (October 29 correction)
+
+The Corvette Workshop now synchronizes its construction **Build focus** with the technology optimizer goal whenever Build focus changes: Long-range traveller → Long-range explorer; Combat Corvette → Space dogfighter; other construction goals use a travel or balanced technology preset. The technology goal can still be changed independently afterward.
+
+Long Range prioritizes hyperdrive and propulsion (including the verified Zenith / Medusa system relationships) and gives weapons **zero modeled supercharged priority**. Combat prioritizes the player's chosen weapon. Balanced gives more weight to mobility/defense than weapons. No fixed in-game percentage is implied by the scoring. An already optimized layout is marked **stale** when its goal changes; click **Optimize Corvette tech** again to apply the new priority. The main Starship optimizer is unchanged.
 
 ## What you can plan
 

@@ -62,3 +62,14 @@
 .cv-part[data-cv-qty]:not([data-cv-qty="0"]){border-color:#448879;background:#12392f}
 .cv-part.filtered-out,.cv-group.filtered-out{display:none!important}
 @media(min-width:1480px){.cv-workspace{grid-template-columns:minmax(285px,330px) minmax(0,1fr) minmax(230px,270px)}}
+/* Goal-specific supercharge guidance, kept separate from weapon preference. */
+.cv-tech-focus-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--at-theme-accent, #79d9ec);
+  background: rgba(120, 160, 180, .07);
+  color: var(--text-secondary, #b5c3d1);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.cv-tech-focus-note strong { color: var(--at-theme-label, #86d9ff); }
