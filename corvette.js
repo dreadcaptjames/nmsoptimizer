@@ -6,18 +6,18 @@ const parts=[
   ['titan-cockpit','Titan-Class Cockpit','Cockpits','cockpit','ship','fore','exterior','Militaristic command module. Only one cockpit can be planned.'],
   ['ambassador-cockpit','Ambassador-Class Cockpit','Cockpits','cockpit','ship','fore','exterior','Minimalist, panoramic cockpit design.'],
   ['thunderbird-cockpit','Thunderbird-Class Cockpit','Cockpits','cockpit','ship','fore','exterior','Outlaw-inspired control module.'],
-  // FORSAKEN 7.10: cockpit families named in official Hello Games patch notes.
-  // Numbered variants are planner identifiers; official individual variant names remain unpublished.
+  // FORSAKEN 7.10: full names cross-checked against the October 28 item catalogue.
+  // Multiple items in a cockpit family are real distinct construction choices.
   ['forsaken-vantage-cockpit','Vantage-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Ultra-wide cockpit with a panoramic view and minimal interior.'],
-  ['forsaken-hornet-cockpit-1','Hornet-Class Cockpit · Variant 1','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
-  ['forsaken-hornet-cockpit-2','Hornet-Class Cockpit · Variant 2','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
-  ['forsaken-hornet-cockpit-3','Hornet-Class Cockpit · Variant 3','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
-  ['forsaken-viper-cockpit-1','Viper-Class Cockpit · Variant 1','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
-  ['forsaken-viper-cockpit-2','Viper-Class Cockpit · Variant 2','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
-  ['forsaken-viper-cockpit-3','Viper-Class Cockpit · Variant 3','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
-  ['forsaken-mantis-cockpit-1','Mantis-Class Cockpit · Variant 1','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
-  ['forsaken-mantis-cockpit-2','Mantis-Class Cockpit · Variant 2','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
-  ['forsaken-mantis-cockpit-3','Mantis-Class Cockpit · Variant 3','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
+  ['forsaken-hornet-cockpit-1','Hornet-i-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
+  ['forsaken-hornet-cockpit-2','Hornet-ii-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
+  ['forsaken-hornet-cockpit-3','Hornet-iii-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Insectoid segmented cockpit. Variant number is a planner label, not an official item name.'],
+  ['forsaken-viper-cockpit-1','Viper-i-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
+  ['forsaken-viper-cockpit-2','Viper-ii-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
+  ['forsaken-viper-cockpit-3','Viper-iii-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Underlit leather-bound panels and gridded viewport. Variant number is a planner label, not an official item name.'],
+  ['forsaken-mantis-cockpit-1','Mantis-i-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
+  ['forsaken-mantis-cockpit-2','Mantis-ii-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
+  ['forsaken-mantis-cockpit-3','Mantis-iii-Class Cockpit','Forsaken · Cockpits','cockpit','ship','fore','exterior','Forsaken 7.10. Reinforced framework with configurable vents and fuselage. Variant number is a planner label, not an official item name.'],
   // The patch confirms new habs, hull structures and Legion-class interiors, but not every part name.
   // Generic hull/hab entries are explicit placeholders, not invented exact in-game item names.
   ['forsaken-hab-placeholder','Forsaken Hab (planning placeholder)','Forsaken · Hull & interiors','appearance','freighter','mid','exterior','New Forsaken habs are confirmed; individual part names and technology effects are not yet verified. Planning-only hull piece; does not satisfy functional habitation requirement.'],
@@ -40,6 +40,20 @@ const parts=[
   ['medusa-reactor','Medusa-Class Reactor','Reactors','reactor','engine','mid','exterior','Reactor module associated with ship technology.'],
   ['azimuth-reactor','Azimuth-Class Reactor','Reactors','reactor','engine','mid','exterior','Reactor variation for system planning.'],
   ['ceto-reactor','Ceto-Class Reactor','Reactors','reactor','shield','mid','exterior','Reactor variation for system planning.'],
+  // Verified 7.10 functional parts: reactors have individual systems, not adjacency bonuses.
+  ['forsaken-limos-reactor','Limos-Class Generator','Forsaken · Reactors','reactor','warpFreighter','mid','exterior','Forsaken 7.10 reactor. Independent reactor technology; exact stat roll and affected stat must be checked in-game.'],
+  ['forsaken-proboscis-reactor','Vile Proboscis Generator','Forsaken · Reactors','reactor','warpFreighter','mid','exterior','Forsaken 7.10 reactor. Independent reactor technology; exact stat roll and affected stat must be checked in-game.'],
+  ['forsaken-chelone-reactor','Chelone-Class Generator','Forsaken · Reactors','reactor','warpFreighter','mid','exterior','Forsaken 7.10 reactor. Independent reactor technology; exact stat roll and affected stat must be checked in-game.'],
+  ['forsaken-arachnid-thruster','Arachnid Thruster','Forsaken · Propulsion','engine','engine','aft','exterior','Forsaken 7.10 rear thruster with a propulsion technology contribution. Unlike similarly named wing pieces, this is a functional thruster.'],
+  ['forsaken-razor-jet','Razor Jet','Forsaken · Propulsion','engine','engine','aft','exterior','Forsaken 7.10 rear thruster; exact performance varies by game save and placement order.'],
+  ['forsaken-rover-landing','Rover Landing Thrusters','Forsaken · Landing','landing','launch','mid','exterior','Forsaken 7.10 landing system, not cosmetic hull plating. Landing bonuses are subject to a shared cap.'],
+  ['forsaken-dematerialisation-ray','Dematerialisation Ray','Forsaken · Weapons','weapon','beam','fore','exterior','Forsaken 7.10 Corvette weapon. Distinct weapon system; no unverified Phase Beam adjacency assumed.'],
+  ['forsaken-legion-hab','Legion-Class Hab','Forsaken · Cargo & habs','hab','freighter','mid','exterior','Forsaken 7.10 habitation module; track its cargo/habitation contribution without invented slot statistics.'],
+  ['forsaken-legion-walk','Legion-Class Walkway','Forsaken · Cargo & habs','structure','freighter','mid','exterior','Forsaken 7.10 access walkway; treated as a possible habitation/cargo contribution, subject to the shared cap.'],
+  ['forsaken-legionnaire-hab','Legionnaire-Class Hab','Forsaken · Cargo & habs','hab','freighter','mid','exterior','Forsaken 7.10 habitation module; contribution varies by build.'],
+  ['forsaken-legionnaire-walk','Legionnaire-Class Walkway','Forsaken · Cargo & habs','structure','freighter','mid','exterior','Forsaken 7.10 passage module; uses shared habitation/cargo planning cap.'],
+  ['forsaken-gunner-hab','Gunner-Class Hab','Forsaken · Cargo & habs','hab','freighter','mid','exterior','Forsaken 7.10 habitation module with cargo/structure relevance.'],
+  ['forsaken-gunner-walk','Gunner-Class Walkway','Forsaken · Cargo & habs','structure','freighter','mid','exterior','Forsaken 7.10 access walkway; shared cargo/habitation planning cap.'],
   ['titan-booster','Titan Heavy Booster','Engines','engine','engine','aft','exterior','Heavy propulsion module; affects flight characteristics.'],
   ['ambassador-booster','Ambassador Heavy Booster','Engines','engine','engine','aft','exterior','Heavy propulsion module.'],
   ['thunderbird-booster','Thunderbird Heavy Booster','Engines','engine','engine','aft','exterior','Heavy propulsion module.'],
@@ -80,15 +94,15 @@ const parts=[
   ['catalog-cargo-rack-8','Cargo Rack 8','Interior furnishings','utility','freighter','mid','interior','Named cargo rack style from the established Corvette parts index; interior decoration only.'],
   ['catalog-cargo-rack-9','Cargo Rack 9','Interior furnishings','utility','freighter','mid','interior','Named cargo rack style from the established Corvette parts index; interior decoration only.'],
   ['catalog-internal-landing-bay','Internal Landing Bay','Habitation & access additions','access','launch','mid','exterior','Verified catalog name. Appearance or physical module; functional technology effects are not asserted.'],
-  ['catalog-thunderbird-landing-thrusters','Thunderbird Landing Thrusters','Landing & access additions','appearance','launch','mid','exterior','Verified catalog name. Appearance or physical module; functional technology effects are not asserted.'],
-  ['catalog-arcadia-sublight-thruster','Arcadia Sublight Thruster','Thrusters · additional','appearance','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
-  ['catalog-twin-dynamo-jets','Twin Dynamo Jets','Thrusters · additional','appearance','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
-  ['catalog-kineostream-thruster','Kineostream Thruster','Thrusters · additional','appearance','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
-  ['catalog-pyrodrive-booster','Pyrodrive Booster','Thrusters · additional','appearance','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
-  ['catalog-widebody-thruster','Widebody Thruster','Thrusters · additional','appearance','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
-  ['catalog-twin-sublight-jets','Twin Sublight Jets','Thrusters · additional','appearance','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
-  ['catalog-firebox-thruster','Firebox Thruster','Thrusters · additional','appearance','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
-  ['catalog-longshore-thruster','Longshore Thruster','Thrusters · additional','appearance','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
+  ['catalog-thunderbird-landing-thrusters','Thunderbird Landing Thrusters','Landing & access additions','landing','launch','mid','exterior','Verified catalog name. Appearance or physical module; functional technology effects are not asserted.'],
+  ['catalog-arcadia-sublight-thruster','Arcadia Sublight Thruster','Thrusters · additional','engine','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
+  ['catalog-twin-dynamo-jets','Twin Dynamo Jets','Thrusters · additional','engine','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
+  ['catalog-kineostream-thruster','Kineostream Thruster','Thrusters · additional','engine','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
+  ['catalog-pyrodrive-booster','Pyrodrive Booster','Thrusters · additional','engine','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
+  ['catalog-widebody-thruster','Widebody Thruster','Thrusters · additional','engine','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
+  ['catalog-twin-sublight-jets','Twin Sublight Jets','Thrusters · additional','engine','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
+  ['catalog-firebox-thruster','Firebox Thruster','Thrusters · additional','engine','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
+  ['catalog-longshore-thruster','Longshore Thruster','Thrusters · additional','engine','engine','aft','exterior','Verified thruster part name. Its in-game propulsion statistics and technology slot representation are not modeled.'],
   ['catalog-arcadia-s-foil','Arcadia S-Foil','Wings & stabilisers','appearance','ship','mid','exterior','Verified catalog name. Appearance or physical module; functional technology effects are not asserted.'],
   ['catalog-arcadia-aerofoil','Arcadia Aerofoil','Wings & stabilisers','appearance','ship','mid','exterior','Verified catalog name. Appearance or physical module; functional technology effects are not asserted.'],
   ['catalog-rockhopper-wing-module','Rockhopper Wing Module','Wings & stabilisers','appearance','ship','mid','exterior','Verified catalog name. Appearance or physical module; functional technology effects are not asserted.'],
@@ -189,7 +203,12 @@ const parts=[
   ['catalog-internal-door','Internal Door','Interior connections','utility','freighter','mid','interior','Verified catalog name. Interior item; no external technology or adjacency bonus asserted.'],
   ['catalog-internal-stairway','Internal Stairway','Interior connections','utility','freighter','mid','interior','Verified catalog name. Interior item; no external technology or adjacency bonus asserted.'],
   ['catalog-holo-tube','Holo-Tube','Interior connections','utility','freighter','mid','interior','Verified catalog name. Interior item; no external technology or adjacency bonus asserted.'],
-].map(([id,name,section,group,icon,zone,kind,description])=>({id,name,section,group,icon,zone,kind,description,era:id.startsWith('forsaken-')?'Forsaken 7.10':'Voyagers / prior',provisional:id.includes('placeholder')||id==='forsaken-legion-interior',tab:id.startsWith('forsaken-')?'forsaken':kind==='interior'?'interior':group==='weapon'||group==='reactor'||group==='shield'||group==='cockpit'||group==='hab'||group==='access'||group==='landing'||group==='engine'?'systems':section.includes('Wings')||section.includes('stabilisers')?'wings':section.includes('Hull')||section.includes('plating')?'hull':'extras',limit:group==='cockpit'?1:(kind==='interior'?30:12)}));
+].map(([id,name,section,group,icon,zone,kind,description])=>({id,name,section,group,icon,zone,kind,description,era:id.startsWith('forsaken-')?'Forsaken 7.10':'Voyagers / prior',provisional:id.includes('placeholder')||id==='forsaken-legion-interior',tab:id.startsWith('forsaken-')?'forsaken':kind==='interior'?'interior':group==='weapon'||group==='reactor'||group==='shield'||group==='cockpit'||group==='hab'||group==='access'||group==='landing'||group==='engine'?'systems':section.includes('Wings')||section.includes('stabilisers')?'wings':section.includes('Hull')||section.includes('plating')?'hull':'extras',limit:group==='cockpit'?1:group==='reactor'?3:(kind==='interior'?30:12)}));
+// The main planner intentionally excludes visual-only hull pieces, wings and interior furnishings.
+// Historic part IDs remain in `parts` solely to preserve import/export compatibility.
+const performanceGroups=new Set(['cockpit','hab','structure','access','landing','reactor','engine','weapon','shield']);
+const performanceParts=parts.filter(part=>performanceGroups.has(part.group) && part.kind!=='interior');
+const performanceIds=new Set(performanceParts.map(part=>part.id));
 const byId=Object.fromEntries(parts.map(p=>[p.id,p]));
 const required=[['cockpit','Cockpit'],['hab','Habitation module'],['access','Access / landing bay'],['landing','Landing gear'],['reactor','Reactor'],['engine','Main engine / thruster'],['weapon','Weapon system']];
 const goals={
@@ -210,17 +229,17 @@ function normalize(raw){const p=defaults();if(!raw||typeof raw!=='object')return
  p.generated=!!raw.generated;p.dirty=!!raw.dirty;p.selected=byId[raw.selected]?raw.selected:null;return p;
 }
 function assess(p){const byGroup={};let exterior=0,interior=0;
- for(const part of parts){const count=p.counts[part.id]||0;byGroup[part.group]=(byGroup[part.group]||0)+count;if(part.kind==='interior')interior+=count;else exterior+=count;}
+ for(const part of parts){const count=p.counts[part.id]||0;byGroup[part.group]=(byGroup[part.group]||0)+count;if(part.kind==='interior')interior+=count;else exterior+=count;if(part.id==='catalog-thunderbird-landing-thrusters')byGroup.engine=(byGroup.engine||0)+count;}
  const missing=required.filter(([id])=>!byGroup[id]);return{missing,byGroup,exterior,interior,ready:missing.length===0};}
-const stylePiece={Titan:['titan-cockpit','titan-hab','titan-bay','titan-booster','titan-wing'],Ambassador:['ambassador-cockpit','ambassador-hab','ambassador-bay','ambassador-booster','ambassador-wing'],Thunderbird:['thunderbird-cockpit','thunderbird-hab','thunderbird-bay','thunderbird-booster','osprey-wing'],Mixed:['titan-cockpit','thunderbird-hab','ambassador-bay','arcadia-booster','arcadia-wing'],Forsaken:['forsaken-vantage-cockpit','titan-hab','titan-bay','titan-booster','forsaken-hull-placeholder']};
+const stylePiece={Titan:['titan-cockpit','titan-hab','titan-bay','titan-booster','titan-wing'],Ambassador:['ambassador-cockpit','ambassador-hab','ambassador-bay','ambassador-booster','ambassador-wing'],Thunderbird:['thunderbird-cockpit','thunderbird-hab','thunderbird-bay','thunderbird-booster','osprey-wing'],Mixed:['titan-cockpit','thunderbird-hab','ambassador-bay','arcadia-booster','arcadia-wing'],Forsaken:['forsaken-vantage-cockpit','forsaken-legion-hab','titan-bay','forsaken-arachnid-thruster',null]};
 function generate(goalId,style,weaponPartId='photon-array'){const goal=goals[goalId]?goalId:'balanced';const [cockpit,hab,access,engine,wing]=stylePiece[style]||stylePiece.Titan;const chosenWeapon=parts.some(part=>part.id===weaponPartId&&part.group==='weapon')?weaponPartId:'photon-array';
- const counts={[cockpit]:1,[hab]:1,[access]:1,'landing-gear':1,'zenith-reactor':1,[engine]:1,[chosenWeapon]:1};
- if(goal==='combat'){counts['ion-barrier']=1;counts['deflector']=1;counts[wing]=2;}
- else if(goal==='range'){counts['medusa-reactor']=1;counts['ambassador-sublight']=1;counts[wing]=2;counts['deflector']=1;}
- else if(goal==='crew'){counts[hab]=2;counts['mission-radar']=1;counts['nutrition-unit']=1;counts['refiner-unit']=1;counts['med-bay']=1;counts[wing]=2;}
- else if(goal==='salvage'){counts['tractor']=1;counts['refiner-unit']=1;counts['mission-radar']=1;counts['deflector']=1;counts[wing]=1;}
- else if(goal==='courier'){counts['mission-radar']=1;counts['refiner-unit']=1;counts['deflector']=1;counts[wing]=1;}
- else{counts['deflector']=1;counts[wing]=2;counts['mission-radar']=1;}
+ const counts={[cockpit]:1,[hab]:1,[access]:1,'landing-gear':1,[style==='Forsaken'?'forsaken-limos-reactor':'zenith-reactor']:1,[engine]:1,[chosenWeapon]:1};
+ if(goal==='combat'){counts['ion-barrier']=1;counts['deflector']=1;}
+ else if(goal==='range'){counts['medusa-reactor']=1;counts['ambassador-sublight']=1;counts['deflector']=1;}
+ else if(goal==='crew'){counts[hab]=2;counts['medusa-reactor']=1;counts['deflector']=1;}
+ else if(goal==='salvage'){counts['deflector']=1;counts['ambassador-sublight']=1;}
+ else if(goal==='courier'){counts['deflector']=1;counts['ambassador-sublight']=1;}
+ else{counts['deflector']=1;counts['ambassador-sublight']=1;}
  return counts;
 }
 // Only construction parts with a known inventory representation create technology tiles.
@@ -231,6 +250,10 @@ const systemRelations={
  'medusa-reactor':{family:'cv-medusa',link:'pulse',label:'Flight maneuverability',note:'Medusa contributes to maneuverability. Do not assume a Pulse Drive adjacency bonus.'},
  'azimuth-reactor':{family:'cv-azimuth',link:'launch',label:'Launch / system recharge',note:'Azimuth is associated with recharge and flight utility. Adjacency is unverified.'},
  'ceto-reactor':{family:'cv-ceto',link:'shield',label:'Defensive systems',note:'Ceto affects defence; a direct shield adjacency bonus is not confirmed.'},
+ 'forsaken-limos-reactor':{family:'cv-limos',label:'Reactor output (verify in-game)',note:'Independent Forsaken reactor. The exact stat and roll are not published; no adjacency bonus assumed.'},
+ 'forsaken-proboscis-reactor':{family:'cv-proboscis',label:'Reactor output (verify in-game)',note:'Independent Forsaken reactor. The exact stat and roll are not published; no adjacency bonus assumed.'},
+ 'forsaken-chelone-reactor':{family:'cv-chelone',label:'Reactor output (verify in-game)',note:'Independent Forsaken reactor. The exact stat and roll are not published; no adjacency bonus assumed.'},
+ 'forsaken-dematerialisation-ray':{family:'cv-dematerialisation',label:'Dematerialisation Ray',note:'Distinct Corvette weapon; adjacency to other beam weapons is unverified.'},
  'photon-array':{family:'photon',link:'photon',label:'Photon Cannon',adjacent:true},
  'phase-array':{family:'beam',link:'beam',label:'Phase Beam',adjacent:true},
  'torpedo':{family:'rockets',link:'rockets',label:'Rocket / torpedo weapons',adjacent:true},
@@ -245,6 +268,10 @@ const specialFamilies={
  'cv-medusa':{name:'Medusa Reactor',short:'MED',icon:'engine',color:'mint',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with maneuverability; adjacency not assumed.',next:'Check the installed module in-game.'},
  'cv-azimuth':{name:'Azimuth Reactor',short:'AZI',icon:'engine',color:'amber',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with system recharge; adjacency not assumed.',next:'Check the installed module in-game.'},
  'cv-ceto':{name:'Ceto Reactor',short:'CET',icon:'shield',color:'blue',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Corvette-built reactor associated with defence; adjacency not assumed.',next:'Check the installed module in-game.'},
+ 'cv-limos':{name:'Limos Generator',short:'LIM',icon:'warpFreighter',color:'violet',sc:'construction',adjacency:'none',maxUpgrades:0,why:'New Forsaken reactor: independent contribution, verify actual stat and roll in-game.',next:'Check the construction stat preview.'},
+ 'cv-proboscis':{name:'Vile Proboscis Generator',short:'VPG',icon:'warpFreighter',color:'mint',sc:'construction',adjacency:'none',maxUpgrades:0,why:'New Forsaken reactor with independent tech contribution, no unverified adjacency.',next:'Check in-game stat preview.'},
+ 'cv-chelone':{name:'Chelone Generator',short:'CHL',icon:'warpFreighter',color:'blue',sc:'construction',adjacency:'none',maxUpgrades:0,why:'New Forsaken reactor with independent tech contribution, no unverified adjacency.',next:'Check in-game stat preview.'},
+ 'cv-dematerialisation':{name:'Dematerialisation Ray',short:'DMR',icon:'beam',color:'rose',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Distinct Corvette weapon introduced in Forsaken 7.10; no inferred beam adjacency.',next:'Check in-game weapon stats.'},
  'cv-cockpit':{name:'Corvette Cockpit',short:'CPT',icon:'ship',color:'blue',sc:'none',adjacency:'none',maxUpgrades:0,why:'Cockpit construction-generated technology; shared reactor capacity/installation order can matter in-game.',next:'Check which modules actually appear when finalizing the build.'},
  'cv-hab':{name:'Habitation / Cargo',short:'HAB',icon:'freighter',color:'amber',sc:'none',adjacency:'none',maxUpgrades:0,why:'Habitation and walkway components provide structural or cargo-related functionality.',next:'Some structural parts may occupy technology space; verify the inventory.'},
  'cv-deadeye':{name:'Deadeye Cannon',short:'DED',icon:'cannon',color:'rose',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Expedition weapon technology, modeled separately pending verified adjacency data.',next:'Check the in-game tooltip.'}
@@ -274,7 +301,7 @@ function technologyManifest(counts){
  }
  return {tiles,statuses};
 }
-window.ATLAS_CORVETTE=Object.freeze({parts:Object.freeze(parts),byId:Object.freeze(byId),required:Object.freeze(required),goals:Object.freeze(goals),defaults,normalize,assess,generate,
+window.ATLAS_CORVETTE=Object.freeze({parts:Object.freeze(parts),performanceParts:Object.freeze(performanceParts),performanceIds,byId:Object.freeze(byId),required:Object.freeze(required),goals:Object.freeze(goals),defaults,normalize,assess,generate,
  technologyManifest,weaponFamilyByPart:Object.freeze(weaponFamilyByPart),weaponPartByFamily:Object.freeze(weaponPartByFamily),specialFamilies:Object.freeze(specialFamilies)});
 window.ATLAS_DATA.gear.corvette={name:'Corvette',icon:'corvette',subtitle:'Modular ship assembly & crew systems',placeholder:'My Corvette',kind:'assembly',goals,families:{}};
 window.ATLAS_DATA.sources.push({name:'Forsaken 7.10 official patch notes',url:'https://www.nomanssky.com/forsaken-update/'},{name:'Voyagers Corvette construction',url:'https://www.nomanssky.com/voyagers-update/'},{name:'Cosmos Tractor Beam',url:'https://www.nomanssky.com/cosmos-update/'});

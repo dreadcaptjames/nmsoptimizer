@@ -28,3 +28,22 @@ The Corvette catalog now includes a category filter, full-text search, a **In my
 ## Known limitations
 
 Hello Games' launch-day notes do not enumerate every new biomechanical hull/hab part or publish per-piece ship statistics, official variant item IDs or inventory technology effects. These are never fabricated in the app. The Corvette workshop remains a concept planner, not a 3D snap validator. Cosmetic variants should be verified in the player's own game. New cockpit technology tiles follow the app's existing generic cockpit construction planning assumption, not proof of a newly verified adjacency rule.
+
+## October 29 — Functional Corvette catalog follow-up
+
+The main catalog is now **performance-first** (71 visible entries), replacing the 181-entry all-purpose listing. Cosmetic wings, plating, hull attachments, accessories and interior furnishings are hidden; earlier build-export part IDs remain available to the importer, with a cleanup control for obsolete decorative counts. Construction essentials (cockpit, hab and landing access) remain listed because they are needed for a viable ship even if their direct stat effects are uncertain.
+
+New confirmed FORSAKEN functional entries: **Limos-Class Generator**, **Vile Proboscis Generator**, **Chelone-Class Generator**, **Dematerialisation Ray**, **Arachnid Thruster**, **Razor Jet**, **Rover Landing Thrusters**, plus **Legion-Class, Legionnaire-Class and Gunner-Class** habs and walkways. The nine newer cockpit variants now use the documented `i`, `ii`, `iii` item naming.
+
+The new reactor types each own an independent construction technology family. Dematerialisation Ray has its own primary-weapon family. Rear thrusters, landing systems and hab/cargo parts link through the existing group-capped construction technology. Actual percentages, rolls, precise new reactor effects and adjacency rules are **not asserted**: they vary by save/installation and are not documented in official patch notes. New wings named "Thruster" (Eldritch, Gorgon, Plated) are *cosmetic stabilizers*, not propulsion modules, and thus remain hidden.
+
+References:
+- https://www.nomanssky.com/forsaken-update/
+- https://nomansskyrecipes.com/new/ (October 28 datamined/new item index)
+- https://www.nomansskyresources.com/corvette-parts/vile-proboscis-generator
+- https://www.nomansskyresources.com/corvette-parts/chelone-class-generator
+- https://www.nomansskyresources.com/corvette-parts/limos-class-generator
+- https://www.nomansskyresources.com/corvette-parts/dematerialization-ray
+- https://www.nomansskyresources.com/corvette-parts/arachnid-thruster
+- https://www.nomansskyresources.com/corvette-parts/razor-jet
+- https://www.nomansskyresources.com/corvette-parts/eldritch-thruster
