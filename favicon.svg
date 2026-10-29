@@ -4,5 +4,5 @@
   <rect x="32" y="32" width="960" height="960" rx="210" fill="url(#base)"/>
   <rect x="32" y="32" width="960" height="960" rx="210" fill="url(#halo)"/>
   <rect x="43" y="43" width="938" height="938" rx="199" fill="none" stroke="#ff5871" stroke-opacity=".91" stroke-width="14"/>
-  <path d="M557 156H322L442 364ZM647 109 442 463 236 109ZM765 51H127L447 594ZM858 0 447 706 35 0Z" transform="translate(512 525) scale(.69 -.69) translate(-446.5 -353)" fill="url(#mark)"/>
+  <path d="M557 156H322L442 364ZM647 109 442 463 236 109ZM765 51H127L447 594ZM858 0 447 706 35 0Z" transform="translate(512 495) scale(.69 -.69) translate(-446.5 -353)" fill="url(#mark)"/>
 </svg>
