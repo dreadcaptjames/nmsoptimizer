@@ -1,5 +1,7 @@
 # Corvette Workshop — Stat-focused catalog (29 October 2026)
 
+> **Updated October 30:** Five modules were subsequently added (four disputed Main Engine candidates plus Venom Spitter), raising the visible catalog from 71 to 76. The exclusion note below reflects the October 29 understanding and has been superseded for those four thrusters; see `FORSAKEN-CATALOG-CORRECTION.md`.
+
 This release narrows the visible Corvette part picker to **71 functional and construction-essential modules**, instead of listing every exterior accessory, cosmetic wing, hull panel and interior furnishing. Earlier decorative part IDs remain recognized on import to avoid discarding saved plans; an optional cleanup control removes non-functional entries from a plan. The existing Corvette weapon-priority bug fix is preserved.
 
 ## Newly added gameplay-system items from FORSAKEN 7.10
@@ -13,7 +15,7 @@ This release narrows the visible Corvette part picker to **71 functional and con
 
 Additional older propulsion items previously misclassified as decorative have been moved into the engine group; Thunderbird Landing Thrusters are now recognized as landing equipment that can also satisfy the required engine group. Structural landing access remains visible because it's required to build a Corvette, even though it isn't claimed to provide a distinct stat upgrade.
 
-**Excluded deliberately:** biomechanical cosmetic hull pieces, decorative wings, ornamental fittings, interior furniture, generic unnamed placeholders. In particular, Eldritch/Gorgon/Plated Thrusters are identified as cosmetic *wing/stabilizer* items by No Man's Sky Resources, not functional rear thrusters.
+**Excluded deliberately (October 29 policy):** biomechanical cosmetic hull pieces, decorative wings, ornamental fittings, interior furniture, generic unnamed placeholders. **Updated October 30:** Eldritch, Gorgon, Plated and Lockjaw Thrusters are now visible as disputed Main Engine candidates based on separate item-data classifications, with unverified bonuses clearly noted.
 
 ## Technical notes
 

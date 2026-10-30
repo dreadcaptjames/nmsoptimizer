@@ -46,8 +46,17 @@ const parts=[
   ['forsaken-chelone-reactor','Chelone-Class Generator','Forsaken · Reactors','reactor','warpFreighter','mid','exterior','Forsaken 7.10 reactor. Independent reactor technology; exact stat roll and affected stat must be checked in-game.'],
   ['forsaken-arachnid-thruster','Arachnid Thruster','Forsaken · Propulsion','engine','engine','aft','exterior','Forsaken 7.10 rear thruster with a propulsion technology contribution. Unlike similarly named wing pieces, this is a functional thruster.'],
   ['forsaken-razor-jet','Razor Jet','Forsaken · Propulsion','engine','engine','aft','exterior','Forsaken 7.10 rear thruster; exact performance varies by game save and placement order.'],
+  // These four appear as Main Engines with A-class upgrade associations in the 7.10
+  // item database, although a separate community index labels them wing stabilizers.
+  // Treat them as engine candidates, subject to the shared engine tech cap; do not
+  // invent fixed roll percentages, additional adjacency rules or per-variant boosts.
+  ['forsaken-eldritch-thruster','Eldritch Thruster','Forsaken · Main engines','engine','engine','aft','exterior','Forsaken 7.10. Listed as a Main Engine with A-class upgrade association by No Man’s Sky Recipes, but as a cosmetic flight stabiliser by NMS Resources. Included for planning; verify technology tile and actual effect in-game.'],
+  ['forsaken-gorgon-thruster','Gorgon Thruster','Forsaken · Main engines','engine','engine','aft','exterior','Forsaken 7.10. Main Engine/A-class association in the item database; another community catalog calls it a cosmetic wing. Verify in-game technology contribution before relying on it.'],
+  ['forsaken-plated-thruster','Plated Thruster','Forsaken · Main engines','engine','engine','aft','exterior','Forsaken 7.10. Classified as Main Engine/A-class in the item database, and as visual-only stabiliser by another reference. No guaranteed stat bonus is asserted.'],
+  ['forsaken-lockjaw-thruster','Lockjaw Thruster','Forsaken · Main engines','engine','engine','aft','exterior','Forsaken 7.10. Main Engine/A-class association according to the item database; cosmetic wing according to an alternate index. Verify the inventory readout in-game.'],
   ['forsaken-rover-landing','Rover Landing Thrusters','Forsaken · Landing','landing','launch','mid','exterior','Forsaken 7.10 landing system, not cosmetic hull plating. Landing bonuses are subject to a shared cap.'],
   ['forsaken-dematerialisation-ray','Dematerialisation Ray','Forsaken · Weapons','weapon','beam','fore','exterior','Forsaken 7.10 Corvette weapon. Distinct weapon system; no unverified Phase Beam adjacency assumed.'],
+  ['forsaken-venom-spitter','Venom Spitter','Forsaken · Weapons','weapon','cannon','fore','exterior','Forsaken 7.10. Distinct Corvette weapon system. Use its own weapon technology family; do not assume adjacency with Photon Cannon or other weapons.'],
   ['forsaken-legion-hab','Legion-Class Hab','Forsaken · Cargo & habs','hab','freighter','mid','exterior','Forsaken 7.10 habitation module; track its cargo/habitation contribution without invented slot statistics.'],
   ['forsaken-legion-walk','Legion-Class Walkway','Forsaken · Cargo & habs','structure','freighter','mid','exterior','Forsaken 7.10 access walkway; treated as a possible habitation/cargo contribution, subject to the shared cap.'],
   ['forsaken-legionnaire-hab','Legionnaire-Class Hab','Forsaken · Cargo & habs','hab','freighter','mid','exterior','Forsaken 7.10 habitation module; contribution varies by build.'],
@@ -204,7 +213,8 @@ const parts=[
   ['catalog-internal-stairway','Internal Stairway','Interior connections','utility','freighter','mid','interior','Verified catalog name. Interior item; no external technology or adjacency bonus asserted.'],
   ['catalog-holo-tube','Holo-Tube','Interior connections','utility','freighter','mid','interior','Verified catalog name. Interior item; no external technology or adjacency bonus asserted.'],
 ].map(([id,name,section,group,icon,zone,kind,description])=>({id,name,section,group,icon,zone,kind,description,era:id.startsWith('forsaken-')?'Forsaken 7.10':'Voyagers / prior',provisional:id.includes('placeholder')||id==='forsaken-legion-interior',tab:id.startsWith('forsaken-')?'forsaken':kind==='interior'?'interior':group==='weapon'||group==='reactor'||group==='shield'||group==='cockpit'||group==='hab'||group==='access'||group==='landing'||group==='engine'?'systems':section.includes('Wings')||section.includes('stabilisers')?'wings':section.includes('Hull')||section.includes('plating')?'hull':'extras',limit:group==='cockpit'?1:group==='reactor'?3:(kind==='interior'?30:12)}));
-// The main planner intentionally excludes visual-only hull pieces, wings and interior furnishings.
+// The main planner excludes confirmed visual-only hull pieces, wings and interior furnishings.
+// Disputed Forsaken Thrusters remain visible as item-data Main Engine candidates.
 // Historic part IDs remain in `parts` solely to preserve import/export compatibility.
 const performanceGroups=new Set(['cockpit','hab','structure','access','landing','reactor','engine','weapon','shield']);
 const performanceParts=parts.filter(part=>performanceGroups.has(part.group) && part.kind!=='interior');
@@ -222,7 +232,7 @@ const goals={
 function defaults(){return{name:'',cls:'S',goal:'balanced',style:'Titan',primaryWeapon:'auto',counts:{},zones:{},generated:false,dirty:false,selected:null};}
 function normalize(raw){const p=defaults();if(!raw||typeof raw!=='object')return p;
  p.name=String(raw.name||'').slice(0,80);p.cls=['C','B','A','S'].includes(raw.cls)?raw.cls:'S';
- p.goal=goals[raw.goal]?raw.goal:'balanced';p.primaryWeapon=['auto','photon','beam','rockets','cyclotron','infra','cv-deadeye'].includes(raw.primaryWeapon)?raw.primaryWeapon:'auto';p.style=['Titan','Ambassador','Thunderbird','Mixed','Forsaken'].includes(raw.style)?raw.style:'Titan';
+ p.goal=goals[raw.goal]?raw.goal:'balanced';p.primaryWeapon=['auto','photon','beam','positron','rockets','cyclotron','infra','cv-deadeye','cv-dematerialisation','cv-venom'].includes(raw.primaryWeapon)?raw.primaryWeapon:'auto';p.style=['Titan','Ambassador','Thunderbird','Mixed','Forsaken'].includes(raw.style)?raw.style:'Titan';
  for(const part of parts){const val=Number(raw.counts?.[part.id]);if(Number.isInteger(val)&&val>0)p.counts[part.id]=Math.min(val,part.limit);if(['fore','mid','aft'].includes(raw.zones?.[part.id]))p.zones[part.id]=raw.zones[part.id];}
  // Exactly one cockpit, consistent across imports and manual edits.
  const cockpits=parts.filter(t=>t.group==='cockpit'&&p.counts[t.id]);for(const c of cockpits.slice(1))delete p.counts[c.id];
@@ -254,6 +264,7 @@ const systemRelations={
  'forsaken-proboscis-reactor':{family:'cv-proboscis',label:'Reactor output (verify in-game)',note:'Independent Forsaken reactor. The exact stat and roll are not published; no adjacency bonus assumed.'},
  'forsaken-chelone-reactor':{family:'cv-chelone',label:'Reactor output (verify in-game)',note:'Independent Forsaken reactor. The exact stat and roll are not published; no adjacency bonus assumed.'},
  'forsaken-dematerialisation-ray':{family:'cv-dematerialisation',label:'Dematerialisation Ray',note:'Distinct Corvette weapon; adjacency to other beam weapons is unverified.'},
+ 'forsaken-venom-spitter':{family:'cv-venom',label:'Venom Spitter',note:'Distinct Corvette weapon; no adjacency with other weapons is assumed.'},
  'photon-array':{family:'photon',link:'photon',label:'Photon Cannon',adjacent:true},
  'phase-array':{family:'beam',link:'beam',label:'Phase Beam',adjacent:true},
  'torpedo':{family:'rockets',link:'rockets',label:'Rocket / torpedo weapons',adjacent:true},
@@ -272,6 +283,7 @@ const specialFamilies={
  'cv-proboscis':{name:'Vile Proboscis Generator',short:'VPG',icon:'warpFreighter',color:'mint',sc:'construction',adjacency:'none',maxUpgrades:0,why:'New Forsaken reactor with independent tech contribution, no unverified adjacency.',next:'Check in-game stat preview.'},
  'cv-chelone':{name:'Chelone Generator',short:'CHL',icon:'warpFreighter',color:'blue',sc:'construction',adjacency:'none',maxUpgrades:0,why:'New Forsaken reactor with independent tech contribution, no unverified adjacency.',next:'Check in-game stat preview.'},
  'cv-dematerialisation':{name:'Dematerialisation Ray',short:'DMR',icon:'beam',color:'rose',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Distinct Corvette weapon introduced in Forsaken 7.10; no inferred beam adjacency.',next:'Check in-game weapon stats.'},
+ 'cv-venom':{name:'Venom Spitter',short:'VEN',icon:'cannon',color:'rose',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Separate Forsaken Corvette weapon family; no cross-weapon adjacency is asserted.',next:'Check installed weapon stats in-game.'},
  'cv-cockpit':{name:'Corvette Cockpit',short:'CPT',icon:'ship',color:'blue',sc:'none',adjacency:'none',maxUpgrades:0,why:'Cockpit construction-generated technology; shared reactor capacity/installation order can matter in-game.',next:'Check which modules actually appear when finalizing the build.'},
  'cv-hab':{name:'Habitation / Cargo',short:'HAB',icon:'freighter',color:'amber',sc:'none',adjacency:'none',maxUpgrades:0,why:'Habitation and walkway components provide structural or cargo-related functionality.',next:'Some structural parts may occupy technology space; verify the inventory.'},
  'cv-deadeye':{name:'Deadeye Cannon',short:'DED',icon:'cannon',color:'rose',sc:'construction',adjacency:'none',maxUpgrades:0,why:'Expedition weapon technology, modeled separately pending verified adjacency data.',next:'Check the in-game tooltip.'}

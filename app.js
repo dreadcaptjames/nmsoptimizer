@@ -11,7 +11,7 @@ const gearKeys=Object.keys(DATA.gear);
 // operation that rearranges the player's entire technology layout.
 const cvSharedFamilies=['launch','pulse','hyperdrive','shield','photon','beam','positron','infra','cyclotron','rockets','scanners','utility'];
 const cvTechFamilies={...Object.fromEntries(cvSharedFamilies.map(id=>[id,DATA.gear.starship.families[id]]).filter(x=>x[1])),...CV.specialFamilies};
-const cvWeaponFamilies=['photon','beam','positron','rockets','cyclotron','infra','cv-deadeye','cv-dematerialisation'];
+const cvWeaponFamilies=['photon','beam','positron','rockets','cyclotron','infra','cv-deadeye','cv-dematerialisation','cv-venom'];
 const cvConstructionToTechnologyGoal=Object.freeze({combat:'combat',range:'explorer',balanced:'balanced',crew:'balanced',salvage:'balanced',courier:'explorer'});
 // Corvette priorities must be independent of the standard starship preset.
 // In particular, a chosen primary weapon MUST NOT override Long Range.
@@ -20,7 +20,7 @@ const cvTechGoals=Object.fromEntries(Object.entries(DATA.gear.starship.goals).ma
   'cv-zenith':goal.weights.hyperdrive||0,'cv-medusa':goal.weights.pulse||0,
   'cv-azimuth':goal.weights.launch||0,'cv-ceto':goal.weights.shield||0,
   'cv-limos':0,'cv-proboscis':0,'cv-chelone':0,
-  'cv-cockpit':0,'cv-hab':0,'cv-deadeye':0,'cv-dematerialisation':0};
+  'cv-cockpit':0,'cv-hab':0,'cv-deadeye':0,'cv-dematerialisation':0,'cv-venom':0};
  if(id==='explorer')Object.assign(weights,{
   hyperdrive:10,'cv-zenith':9,pulse:8,'cv-medusa':7,
   launch:6,'cv-azimuth':5,shield:3,'cv-ceto':2
@@ -474,7 +474,7 @@ function renderCorvette(){
     <div class="loadout-identity"><span class="loadout-badge">${ICONS.render('corvette','gear-glyph')}</span><div><div class="eyebrow">ACTIVE PROFILE / CORVETTE WORKSHOP</div><h2>${esc(p.name||'My Corvette')} <span class="class-badge">${esc(p.cls)}-CLASS</span></h2><p>Modular construction · Habitable ship · Conceptual layout</p></div></div>
     <div class="loadout-status ${stats.ready&&stats.exterior?'ready':''}"><span class="status-dot"></span>${esc(corvetteStatus(p,stats))}</div>
   </section>
-  <aside class="forsaken-note cv-forsaken-note" aria-label="Forsaken Corvette update"><span class="forsaken-tag">LATEST UPDATE · FORSAKEN 7.10</span><div><strong>New corvette designs are here</strong><p>The performance catalog now includes the Limos, Vile Proboscis and Chelone reactors; Dematerialisation Ray; Arachnid and Razor thrusters; Rover landing system; and new habs. Decorative hull and interior parts are hidden. Forsaken traders exchange modules for haunting mementos. No unverified adjacency or fixed stat bonuses have been added.</p><p class="forsaken-sub">Find mementos at infested outposts, hulks, derelict freighters and planetary digsites. Space courier contracts require a Corvette and a Gravitino Coil.</p></div><a href="https://www.nomanssky.com/forsaken-update/" target="_blank" rel="noopener noreferrer">Full 7.10 notes ↗</a></aside>
+  <aside class="forsaken-note cv-forsaken-note" aria-label="Forsaken Corvette update"><span class="forsaken-tag">LATEST UPDATE · FORSAKEN 7.10</span><div><strong>New corvette designs are here</strong><p>The performance catalog now includes the Limos, Vile Proboscis and Chelone reactors; Dematerialisation Ray; Arachnid and Razor thrusters; Eldritch, Gorgon, Plated and Lockjaw engine candidates; Rover landing system; Venom Spitter and new habs. Decorative hull and interior parts are hidden. Several thrusters have conflicting community classifications: check the in-game technology readout. No unverified stat percentages or adjacency bonuses have been added.</p><p class="forsaken-sub">Find mementos at infested outposts, hulks, derelict freighters and planetary digsites. Space courier contracts require a Corvette and a Gravitino Coil.</p></div><a href="https://www.nomanssky.com/forsaken-update/" target="_blank" rel="noopener noreferrer">Full 7.10 notes ↗</a></aside>
   <div class="cv-metrics">
    <div class="metric"><span class="metric-icon">◈</span><div><div class="metric-name">EXTERIOR MODULES</div><div class="metric-value">${stats.exterior}</div></div></div>
    <div class="metric"><span class="metric-icon">⌂</span><div><div class="metric-name">RELEVANT MODULES</div><div class="metric-value">${Object.entries(p.counts).reduce((n,[id,count])=>n+(CV.performanceIds.has(id)?count:0),0)}</div></div></div>
@@ -534,7 +534,7 @@ function applyCorvetteSearch(){
    if(match){visible++;shown++;}
   });group.classList.toggle('filtered-out',visible===0);
  });
- const summary=document.getElementById('cv-catalog-summary');if(summary)summary.textContent=shown+' matching module'+(shown===1?'':'s')+' · '+'Functional systems only; real stat rolls vary.';
+ const summary=document.getElementById('cv-catalog-summary');if(summary)summary.textContent=shown+' matching module'+(shown===1?'':'s')+' · '+'Functional/essential modules, plus disputed engine candidates; verify game stats.';
  const empty=document.getElementById('cv-catalog-empty');if(empty)empty.hidden=shown>0;
 }
 
@@ -748,7 +748,7 @@ app.addEventListener('change',event=>{
   if(t.id==='import-file'){importJSON(t.files&&t.files[0]);return;}
   if(key==='corvette'){
     const p=state.equipment.corvette;
-    if(t.id==='cv-category'){corvetteFilter=['all','selected','forsaken','systems','hull','wings','interior','extras'].includes(t.value)?t.value:'all';applyCorvetteSearch();return;}
+    if(t.id==='cv-category'){corvetteFilter=['all','selected','forsaken','reactors','engines','weapons','shields','core'].includes(t.value)?t.value:'all';applyCorvetteSearch();return;}
     if(t.id==='cv-goal'&&CV.goals[t.value]){p.goal=t.value;p.tech.goal=cvConstructionToTechnologyGoal[t.value];p.tech.dirty=!!p.tech.optimized&&!!p.tech.layout;save();render();return;}
     if(t.id==='cv-style'&&['Titan','Ambassador','Thunderbird','Mixed','Forsaken'].includes(t.value)){p.style=t.value;save();render();return;}
     if(t.id==='cv-class'&&['C','B','A','S'].includes(t.value)){p.cls=t.value;p.tech.cls=t.value;p.tech.sc=p.tech.sc.slice(0,wantedSC('starship',p.cls));p.tech.dirty=!!p.tech.optimized&&!!p.tech.layout;save();render();return;}
