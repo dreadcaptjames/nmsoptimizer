@@ -40,6 +40,94 @@ const cvTechGoals=Object.fromEntries(Object.entries(DATA.gear.starship.goals).ma
   tip:id==='explorer'?'Prioritize hyperdrive and propulsion before defensive systems. Weapons do not receive supercharged priority in this focus.':goal.tip}];
 }));
 const cvTechGear={...DATA.gear.starship,name:'Corvette technology',families:cvTechFamilies,goals:cvTechGoals};
+// Family-specific colors are selected for perceptual contrast within each equipment catalog.
+// Using a stable lookup also keeps a family identical in starship and Corvette views.
+const familyTones=Object.freeze({
+  "beam":'hsl(308 85% 75%)',
+  "blaze":'hsl(240 92% 65%)',
+  "boltcaster":'hsl(60 92% 65%)',
+  "boost":'hsl(240 92% 65%)',
+  "cannon":'hsl(120 92% 65%)',
+  "cloak":'hsl(75 78% 74%)',
+  "cold":'hsl(120 92% 65%)',
+  "cosmetic":'hsl(60 92% 65%)',
+  "cv-azimuth":'hsl(120 92% 65%)',
+  "cv-ceto":'hsl(285 92% 65%)',
+  "cv-chelone":'hsl(15 92% 83%)',
+  "cv-cockpit":'hsl(150 92% 65%)',
+  "cv-deadeye":'hsl(330 78% 83%)',
+  "cv-dematerialisation":'hsl(135 92% 83%)',
+  "cv-hab":'hsl(0 92% 65%)',
+  "cv-limos":'hsl(60 92% 65%)',
+  "cv-medusa":'hsl(90 92% 65%)',
+  "cv-proboscis":'hsl(345 92% 65%)',
+  "cv-venom":'hsl(210 92% 65%)',
+  "cv-zenith":'hsl(315 92% 65%)',
+  "cyclotron":'hsl(243 80% 76%)',
+  "engine":'hsl(0 92% 65%)',
+  "flame":'hsl(195 92% 65%)',
+  "fleetCombat":'hsl(195 92% 74%)',
+  "fleetExplore":'hsl(300 92% 65%)',
+  "fleetFuel":'hsl(0 92% 65%)',
+  "fleetIndustry":'hsl(120 92% 65%)',
+  "fleetSpeed":'hsl(225 92% 74%)',
+  "fleetTrade":'hsl(45 92% 65%)',
+  "forbidden":'hsl(0 92% 65%)',
+  "freightStory":'hsl(330 92% 74%)',
+  "freightTrails":'hsl(240 92% 65%)',
+  "freightUtility":'hsl(15 78% 83%)',
+  "freighterWarp":'hsl(120 78% 83%)',
+  "grav":'hsl(120 92% 65%)',
+  "hazard":'hsl(330 92% 65%)',
+  "hazardSystems":'hsl(330 92% 65%)',
+  "heat":'hsl(150 92% 65%)',
+  "hyperdrive":'hsl(274 83% 74%)',
+  "infra":'hsl(5 85% 72%)',
+  "jetpack":'hsl(45 78% 83%)',
+  "laser":'hsl(75 78% 83%)',
+  "launch":'hsl(38 93% 70%)',
+  "life":'hsl(225 92% 65%)',
+  "mechAI":'hsl(165 92% 65%)',
+  "mechCannon":'hsl(300 92% 65%)',
+  "mechDrive":'hsl(345 92% 65%)',
+  "mechFlame":'hsl(0 78% 83%)',
+  "mechJump":'hsl(60 92% 65%)',
+  "mechLaser":'hsl(90 92% 65%)',
+  "mechScanner":'hsl(135 78% 65%)',
+  "mining":'hsl(45 78% 83%)',
+  "nautCannon":'hsl(45 92% 65%)',
+  "nautDrive":'hsl(300 78% 74%)',
+  "nautLaser":'hsl(30 92% 65%)',
+  "nautSonar":'hsl(180 92% 65%)',
+  "neutron":'hsl(300 92% 65%)',
+  "paralysis":'hsl(210 92% 65%)',
+  "photon":'hsl(54 90% 74%)',
+  "positron":'hsl(93 80% 72%)',
+  "pulse":'hsl(172 81% 69%)',
+  "radiation":'hsl(90 92% 83%)',
+  "refiner":'hsl(300 92% 65%)',
+  "rockets":'hsl(336 87% 72%)',
+  "scanner":'hsl(330 92% 65%)',
+  "scanners":'hsl(190 89% 80%)',
+  "scatter":'hsl(150 92% 65%)',
+  "sentinel":'hsl(45 78% 83%)',
+  "shield":'hsl(208 85% 75%)',
+  "solar":'hsl(270 78% 83%)',
+  "special":'hsl(30 92% 65%)',
+  "story":'hsl(180 92% 65%)',
+  "suspension":'hsl(210 92% 65%)',
+  "terrain":'hsl(255 78% 74%)',
+  "toxic":'hsl(0 78% 83%)',
+  "translator":'hsl(300 92% 83%)',
+  "underwater":'hsl(30 92% 65%)',
+  "utility":'hsl(240 92% 65%)',
+  "vehicleScanner":'hsl(300 78% 83%)',
+  "vehicleUtility":'hsl(225 92% 65%)',
+  "visor":'hsl(195 92% 74%)',
+  "volatile":'hsl(345 78% 83%)',
+});
+function techStyle(id){return `style="--tech-tone:${familyTones[id]||'#a5d8df'};--tile-color:var(--tech-tone)"`;}
+
 // A selected Corvette weapon influences combat builds, not travel builds.
 function chosenCorvetteWeapon(p){
  const installed=Object.entries(p.counts||{}).filter(([id,count])=>count>0&&CV.weaponFamilyByPart[id]).map(([id])=>CV.weaponFamilyByPart[id]);
@@ -280,12 +368,12 @@ function renderTechnologyChoices(gear,profile,goal){
     parts.push(`<div class="family-entry ${enabled?'is-enabled':''} ${hidden}" data-search="${esc(searchValue)}">
       <div class="family-row">
         <input type="checkbox" id="fam-${id}" data-family="${id}" ${enabled?'checked':''}>
-        <label for="fam-${id}"><span class="fam-topline"><span class="family-icon ${esc(f.color)}">${ICONS.render(f.icon,'family-glyph')}</span><span class="fam-title">${esc(f.name)}</span></span><span class="fam-sub">${esc(summary)}${addons.length?` · ${picked.length}/${addons.length} blueprints`:''}</span></label>
+        <label for="fam-${id}"><span class="fam-topline"><span class="family-icon ${esc(f.color)}" ${techStyle(id)}>${ICONS.render(f.icon,'family-glyph')}</span><span class="fam-title">${esc(f.name)}</span></span><span class="fam-sub">${esc(summary)}${addons.length?` · ${picked.length}/${addons.length} blueprints`:''}</span></label>
         ${goal.weights[id]>=6?'<span class="family-priority" title="High-priority for this optimization focus">◆</span>':''}
       </div>
       ${addons.length?`<details class="addon-details" data-addon-group="${esc(id)}" ${expandedAddons.has(id)?'open':''}>
         <summary>Blueprints <span>${picked.length}/${addons.length}</span></summary>
-        <div class="addon-list">${addons.map(a=>`<label class="addon-row ${enabled?'':'dimmed'}"><input type="checkbox" data-addon="${id}:${esc(a.id)}" ${profile.addons.includes(id+':'+a.id)?'checked':''} ${enabled?'':'disabled'}><span class="addon-glyph ${esc(f.color)}">${ICONS.render(a.icon||f.icon,'family-glyph')}</span><span>${esc(a.name)}</span></label>`).join('')}</div>
+        <div class="addon-list">${addons.map(a=>`<label class="addon-row ${enabled?'':'dimmed'}"><input type="checkbox" data-addon="${id}:${esc(a.id)}" ${profile.addons.includes(id+':'+a.id)?'checked':''} ${enabled?'':'disabled'}><span class="addon-glyph ${esc(f.color)}" ${techStyle(id)}>${ICONS.render(a.icon||f.icon,'family-glyph')}</span><span>${esc(a.name)}</span></label>`).join('')}</div>
       </details>`:''}
     </div>`);
   }
@@ -396,7 +484,7 @@ function render(){
             <div class="grid-scroll"><div class="tech-grid" style="--columns:${profile.cols}" role="group" aria-label="Technology layout with ${profile.rows} rows and ${profile.cols} columns">${Array.from({length:profile.cols*profile.rows},(_,i)=>renderCell(i,gear,profile)).join('')}</div></div>
             <div class="grid-footer"><span>${tilesInGrid} technologies placed</span><div class="occupancy"><span style="width:${pct}%"></span></div><span>${pct}% occupied</span></div>
           </div>
-          <div class="grid-legend"><span><i class="swatch tlswatch"></i> Technology</span><span><i class="swatch scswatch"></i> Supercharged</span><span><i class="swatch adjwatch"></i> Adjacency</span><span><i class="swatch lkswatch"></i> Locked</span></div>
+          <div class="grid-legend"><span><i class="swatch tlswatch"></i> Color = technology family</span><span><i class="swatch scswatch"></i> Supercharged</span><span><i class="swatch adjwatch"></i> Adjacency</span><span><i class="swatch lkswatch"></i> Locked</span></div>
           <div class="hint-line">${editing==='move'?'↔ Drag a module or select two slots to swap. Tap a module to inspect it.':editing==='charge'?'✦ Select a position to add or remove a supercharged marker.':'▧ Select slots to lock or unlock their positions.'} <span>CORE = base · U1–U3 = rolled · TECH = crafted</span></div>
           ${profile.scExample?`<div class="notice warning"><strong>Example supercharged positions.</strong> These aren't your real slot coordinates. Choose <b>Clear SC</b> and mark your own for a personalized build.</div>`:''}
           ${!profSC.length?`<div class="notice"><strong>No supercharged slots marked.</strong> Choose <b>Supercharged</b> and select the positions from your in-game inventory. No sample slots are preselected.</div>`:scMismatched?`<div class="notice warning"><strong>Slot-count check:</strong> ${profSC.length} supercharged positions marked; ${scCount} expected for this equipment setting. Verify your inventory.</div>`:''}
@@ -429,13 +517,13 @@ function renderCorvetteTech(p){
  const active=cvSharedFamilies.map(id=>[id,cvTechGear.families[id]]).filter(x=>x[1]);
  const groups=active.map(([id,f])=>{
   const addons=(f.addons||[]).filter(a=>canUse(a,t.vehicle));
-  return `<div class="cv-tech-family"><label><input type="checkbox" data-cv-tech-family="${id}" ${t.enabled.includes(id)?'checked':''}> <span class="family-icon ${esc(f.color)}">${ICONS.render(f.icon,'family-glyph')}</span> ${esc(f.name)}</label>${addons.length?`<details><summary>Blueprints (${addons.filter(a=>t.addons.includes(id+':'+a.id)).length}/${addons.length})</summary>${addons.map(a=>`<label class="cv-tech-addon"><input type="checkbox" data-cv-tech-addon="${id}:${a.id}" ${t.addons.includes(id+':'+a.id)?'checked':''}> ${esc(a.name)}</label>`).join('')}</details>`:''}</div>`;
+  return `<div class="cv-tech-family"><label><input type="checkbox" data-cv-tech-family="${id}" ${t.enabled.includes(id)?'checked':''}> <span class="family-icon ${esc(f.color)}" ${techStyle(id)}>${ICONS.render(f.icon,'family-glyph')}</span> ${esc(f.name)}</label>${addons.length?`<details><summary>Blueprints (${addons.filter(a=>t.addons.includes(id+':'+a.id)).length}/${addons.length})</summary>${addons.map(a=>`<label class="cv-tech-addon"><input type="checkbox" data-cv-tech-addon="${id}:${a.id}" ${t.addons.includes(id+':'+a.id)?'checked':''}> ${esc(a.name)}</label>`).join('')}</details>`:''}</div>`;
  }).join('');
  const assignments=stat?.scPlacements.map(x=>`<div class="cv-tech-sc-item"><span>R${Math.floor(x.position/t.cols)+1} C${x.position%t.cols+1} · ${esc(x.label)}</span><strong>${x.priority>0?'+'+Math.round(x.priority):'no SC benefit'}</strong></div>`).join('')||'';
  return `<section class="panel cv-tech-planner" aria-label="Corvette technology grid and supercharged optimizer">
   <div class="planner-head"><div><span class="eyebrow">05 / SUPERCHARGED SYSTEMS</span><h2>Corvette technology optimizer</h2><p class="helper">Construction modules now create their corresponding technology tiles here immediately. Mark the purple coordinates in your <strong>actual Corvette inventory</strong>, then Optimize to arrange installed parts and selected starship upgrades together.</p></div></div>
   <div class="cv-link-summary"><strong>◈ Linked construction technology · ${linked.tiles.length} modeled tiles</strong><span>${Object.keys(links).length?Object.entries(links).map(([key,items])=>`<span class="cv-link-pill"><b>${esc(key)}</b> ×${items.length}</span>`).join(''):'Add a functional Corvette part to populate its technology slots.'}</span><p>Reactor ↔ flight-system links describe the statistic affected, <em>not</em> an unverified adjacency bonus. Only modeled same-family tile edges receive adjacency points.</p></div>
-  <div class="cv-grid-legend"><span><b class="cv-legend-swatch cv-installed"></b> Linked construction tile</span><span><b class="cv-legend-swatch cv-synergy"></b> Modeled adjacency</span><span><b class="cv-legend-swatch cv-functional"></b> Related flight system (not necessarily adjacency)</span></div>
+  <div class="cv-grid-legend"><span class="cv-color-explainer">Tile colors = technology families; short codes confirm identity.</span><span><b class="cv-legend-swatch cv-installed"></b> Linked construction tile</span><span><b class="cv-legend-swatch cv-synergy"></b> Modeled adjacency</span><span><b class="cv-legend-swatch cv-functional"></b> Related flight system (not necessarily adjacency)</span></div>
   <div class="cv-tech-options"><label>Technology goal<select id="cv-tech-goal" class="control">${Object.entries(cvTechGear.goals).map(([id,g])=>`<option value="${id}" ${t.goal===id?'selected':''}>${esc(g.label)}</option>`).join('')}</select></label><label>Primary weapon priority<select id="cv-primary-weapon" class="control"><option value="auto" ${p.primaryWeapon==='auto'?'selected':''}>Auto · installed weapon</option>${cvWeaponFamilies.map(id=>`<option value="${id}" ${p.primaryWeapon===id?'selected':''}>${esc(cvTechGear.families[id]?.name||id)}</option>`).join('')}</select></label><label>Upgrade modules<select id="cv-tech-depth" class="control">${[1,2,3].map(n=>`<option value="${n}" ${t.depth===n?'selected':''}>${n} per family</option>`).join('')}</select></label><label>Grid columns<select id="cv-tech-cols" class="control">${[6,7,8,9,10].map(n=>`<option value="${n}" ${t.cols===n?'selected':''}>${n}</option>`).join('')}</select></label><label>Grid rows<select id="cv-tech-rows" class="control">${[3,4,5,6].map(n=>`<option value="${n}" ${t.rows===n?'selected':''}>${n}</option>`).join('')}</select></label></div>
   <p class="cv-weapon-priority">${primary?`Primary weapon: <strong>${esc(cvTechGear.families[primary]?.name||primary)}</strong>. ${t.goal==='combat'?'Prioritized for combat supercharged slots.':t.goal==='balanced'?'Eligible after core travel and defensive systems.':'Kept out of supercharged priority for Long Range.'}`:'No Corvette weapon selected yet. Add a weapon in the construction catalog or check a shared weapon below.'} ${p.primaryWeapon!=='auto'&&!primary?'Your preferred weapon is not installed or enabled yet.':''} Changing Build focus above also updates this technology goal; you can override it here.</p>
   <details class="cv-tech-library"><summary>Choose shared starship technology & blueprints (${t.enabled.length} families)</summary><div class="cv-tech-families">${groups}</div></details>
@@ -450,7 +538,7 @@ function renderCorvetteTech(p){
   ${t.layout&&!t.optimized?'<div class="cv-tech-auto-state">Construction-linked modules are showing in the grid. Their positions are provisional until you choose <strong>Optimize Corvette tech</strong>.</div>':''}
   ${!t.sc.length?'<div class="notice warning"><strong>No supercharged slots marked yet.</strong> The optimizer can still group adjacent technology, but cannot prioritize purple slots until you mark real positions.</div>':''}
   <div class="cv-tech-toolbar cv-tech-actions"><button type="button" class="btn primary" data-action="cv-tech-optimize">✧ Optimize Corvette tech ↗</button><button type="button" class="btn quiet" data-action="cv-tech-clear-layout">Clear tech layout</button></div>
-  ${stat?`<div class="cv-tech-result"><strong>✦ SC impact: +${Math.round(stat.scScore)} planning points · ${stat.effectiveSC}/${t.sc.length} useful purple slots</strong><span>SC strategy: ${esc(cvTechGear.families[SOLVER.superchargedPlan(t.layout.tiles,techGear,techGear.goals[t.goal],t.sc.length).focusFamily]?.name||'No eligible family')} first, then remaining eligible families; adjacency afterwards.</span><span>Adjacency: +${Math.round(stat.adjacencyScore)} · ${stat.connections} links</span>${assignments||'<p>Mark SC slots to receive placement recommendations.</p>'}<p>These are relative planning scores, not in-game percentages or DPS. U1 assumes your strongest roll. Verify real Corvette technology, class limits, construction order and actual stats in-game.</p></div>`:''}
+  ${stat?`<div class="cv-tech-result"><strong>✦ SC impact: +${Math.round(stat.scScore)} planning points · ${stat.effectiveSC}/${t.sc.length} useful purple slots</strong><span>SC strategy: ${esc(cvTechGear.families[SOLVER.superchargedPlan(t.layout.tiles,techGear,techGear.goals[t.goal],t.sc.length).focusFamily]?.name||'No eligible family')} first, then remaining eligible families; adjacency afterwards.</span><span>Adjacency: +${Math.round(stat.adjacencyScore)} · ${stat.connections} links · ${stat.fragmentedGroups} split groups</span>${assignments||'<p>Mark SC slots to receive placement recommendations.</p>'}<p>These are relative planning scores, not in-game percentages or DPS. U1 assumes your strongest roll. Verify real Corvette technology, class limits, construction order and actual stats in-game.</p></div>`:''}
  </section>`;
 }
 function renderCorvette(){
@@ -613,7 +701,7 @@ function renderCell(i,gear,profile,cellAction='cell'){
     (activeTile.role==='construction'&&activeTile.linkFamily===tile.family)||
     (tile.role==='construction'&&tile.linkFamily===activeTile.family));
   const scHint=sc&&tile?(priority>0?` — SC priority +${Math.round(priority)} planning points`:' — no modeled SC benefit'):'';
-  return `<button type="button" class="cell ${locked?'locked':''} ${sc?'sc':''} ${sc&&tile?(priority>0?'sc-effective':'sc-low'):''} ${tile?'tile '+fam.color:''} ${tile?.role==='construction'?'cv-linked-tile':''} ${selectedCell===i?'selected':''} ${selectedFamily?'same-family':''} ${functionalLink?'cv-function-linked':''} ${activeTile&&tile&&!selectedFamily&&!functionalLink?'deemphasized':''}" data-action="${cellAction}" data-cell="${i}" ${tile&&cellEditMode==='move'?'draggable="true"':''} aria-label="Row ${Math.floor(i/profile.cols)+1}, column ${i%profile.cols+1}: ${esc(name)}${sc?' (supercharged)':''}${locked?' (locked)':''}${esc(scHint)}" title="${esc(name)}${tile?' — '+esc(subtitle):''}${esc(scHint)}">${edges.map(side=>`<span class="adjacency-edge ${side}" aria-hidden="true"></span>`).join('')}${tile?`<span class="slot-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'slot-glyph')}</span><span class="cell-name">${esc(tile.role==='crafted'?tile.label:fam.name)}</span><span class="cell-rank">${esc(text)}</span>${sc&&priority>0?`<span class="sc-impact" aria-hidden="true">✦ +${Math.round(priority)}</span>`:''}`:locked?`<span class="slot-icon lock-icon">${ICONS.render('lock','slot-glyph')}</span><span class="cell-rank">LOCKED</span>`:sc?`<span class="slot-icon sc-empty-icon">${ICONS.render('spark','slot-glyph')}</span><span class="cell-rank">SC SLOT</span>`:`<span class="cell-code">+</span><span class="number">${String(i+1).padStart(2,'0')}</span>`}</button>`;
+  return `<button type="button" class="cell ${locked?'locked':''} ${sc?'sc':''} ${sc&&tile?(priority>0?'sc-effective':'sc-low'):''} ${tile?'tile '+fam.color:''} ${tile?.role==='construction'?'cv-linked-tile':''} ${selectedCell===i?'selected':''} ${selectedFamily?'same-family':''} ${functionalLink?'cv-function-linked':''} ${activeTile&&tile&&!selectedFamily&&!functionalLink?'deemphasized':''}" data-action="${cellAction}" data-cell="${i}" ${tile?techStyle(tile.family):''} ${tile&&cellEditMode==='move'?'draggable="true"':''} aria-label="Row ${Math.floor(i/profile.cols)+1}, column ${i%profile.cols+1}: ${esc(name)}${sc?' (supercharged)':''}${locked?' (locked)':''}${esc(scHint)}" title="${esc(name)}${tile?' — '+esc(subtitle):''}${esc(scHint)}">${edges.map(side=>`<span class="adjacency-edge ${side}" aria-hidden="true"></span>`).join('')}${tile?`<span class="slot-icon ${esc(fam.color)}" ${techStyle(tile.family)}>${ICONS.render(tile.icon||fam.icon,'slot-glyph')}</span><span class="cell-name">${esc(tile.role==='crafted'?tile.label:fam.name)}</span><span class="cell-rank">${esc(fam.short||tile.family.toUpperCase().slice(0,3))} · ${esc(text)}</span>${sc&&priority>0?`<span class="sc-impact" aria-hidden="true">✦ +${Math.round(priority)}</span>`:''}`:locked?`<span class="slot-icon lock-icon">${ICONS.render('lock','slot-glyph')}</span><span class="cell-rank">LOCKED</span>`:sc?`<span class="slot-icon sc-empty-icon">${ICONS.render('spark','slot-glyph')}</span><span class="cell-rank">SC SLOT</span>`:`<span class="cell-code">+</span><span class="number">${String(i+1).padStart(2,'0')}</span>`}</button>`;
 }
 function renderInspector(tile,gear,profile,selectedPos){
   const fam=gear.families[tile.family];if(!fam)return'';
@@ -621,7 +709,7 @@ function renderInspector(tile,gear,profile,selectedPos){
   const value=SOLVER.scValue(tile,gear,gear.goals[profile.goal]);
   const onSC=selectedPos!==null&&profile.sc.includes(selectedPos);
   const scAdvice=value>0?(onSC?`This technology is benefiting from the marked supercharged position (+${Math.round(value)} relative planning points).`:`Potential SC priority: +${Math.round(value)} relative planning points. The optimizer fills the highest-priority eligible technology family first, then optimizes adjacency.`):'This technology has no modeled supercharged priority. Reserve purple slots for performance technology where possible.';
-  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}">${ICONS.render(tile.icon||fam.icon,'family-glyph')}</span><div><strong>${esc(tile.label)}</strong><small>${esc(role)}</small></div></div><p>${esc(fam.why)}</p>${tile.adjacencyNote?`<p class="inspector-relationship"><strong>Adjacency:</strong> ${esc(tile.adjacencyNote)}</p>`:tile.noAdjacency?'<p class="inspector-relationship"><strong>Adjacency:</strong> No confirmed placement bonus for this technology.</p>':''}<div class="inspector-sc"><strong>✦ Supercharged evaluation</strong><span>${esc(scAdvice)}</span></div><div class="inspector-note">${tile.role==='upgrade'&&tile.sequence===1?'U1 represents your best module roll, not a guaranteed stat value. ':'Use Move tech to select another slot or drag this module to relocate it.'}</div></div>`;
+  return `<div class="inspector"><div class="inspector-title"><span class="family-icon ${esc(fam.color)}" ${techStyle(tile.family)}>${ICONS.render(tile.icon||fam.icon,'family-glyph')}</span><div><strong>${esc(tile.label)}</strong><small>${esc(role)}</small></div></div><p>${esc(fam.why)}</p>${tile.adjacencyNote?`<p class="inspector-relationship"><strong>Adjacency:</strong> ${esc(tile.adjacencyNote)}</p>`:tile.noAdjacency?'<p class="inspector-relationship"><strong>Adjacency:</strong> No confirmed placement bonus for this technology.</p>':''}<div class="inspector-sc"><strong>✦ Supercharged evaluation</strong><span>${esc(scAdvice)}</span></div><div class="inspector-note">${tile.role==='upgrade'&&tile.sequence===1?'U1 represents your best module roll, not a guaranteed stat value. ':'Use Move tech to select another slot or drag this module to relocate it.'}</div></div>`;
 }
 function renderBriefing(gear,profile,sorted,stats){
   const goal=gear.goals[profile.goal];
@@ -633,7 +721,7 @@ function renderBriefing(gear,profile,sorted,stats){
   const ranked=stats.scPlacements.slice().sort((a,b)=>
     (goal.weights[b.family]||0)-(goal.weights[a.family]||0)||b.priority-a.priority);
   const placements=ranked.map(item=>`<li class="sc-assignment ${item.priority>0?'is-useful':'is-filler'}"><span class="sc-coord">R${Math.floor(item.position/profile.cols)+1} C${item.position%profile.cols+1}</span><span>${esc(item.label)}${item.priority<=0?' · no modeled SC benefit':''}</span><b>${item.priority>0?'+'+Math.round(item.priority):'—'}</b></li>`).join('');
-  const priorityLine=focus?`<p class="sc-focus-strategy"><strong>✦ Focus first: ${esc(gear.families[focus].name)}</strong> · ${placedFocus}/${allocatedFocus} planned SC placements<br><span>Allocation order: ${eligibleOrder.map(id=>esc(gear.families[id].name)).join(' → ')}. Adjacency is optimized afterwards.</span></p>`:
+  const priorityLine=focus?`<p class="sc-focus-strategy"><strong>✦ Focus first: ${esc(gear.families[focus].name)}</strong> · ${placedFocus}/${allocatedFocus} planned SC placements<br><span>Allocation order: ${eligibleOrder.map(id=>esc(gear.families[id].name)).join(' → ')}. All compatible technology groups are clustered afterward, including secondary systems.</span></p>`:
     `<p class="sc-focus-strategy">No selected technology has a modeled SC benefit. No performance bonus is assumed for unused purple slots.</p>`;
   return `<div class="sc-analysis" aria-label="Supercharged optimization breakdown"><div class="sc-analysis-head"><strong>✦ Supercharged assignments</strong><span>${stats.effectiveSC}/${profile.sc.length} useful</span></div>
     ${priorityLine}
@@ -641,7 +729,7 @@ function renderBriefing(gear,profile,sorted,stats){
     ${placements?`<ul class="sc-assignment-list">${placements}</ul>`:`<p class="sc-analysis-empty">${profile.sc.length?'No technology occupies your marked SC slots.':'Mark your real purple slots and select Optimize layout to prioritize them.'}</p>`}
     <p class="sc-disclaimer">Relative planning points, not actual in-game stat bonuses. U1 assumes your strongest rolled upgrade.</p></div>
   <div class="priority-item"><span class="number-badge">✧</span><div><h4>${stats.effectiveSC}/${profile.sc.length} supercharged positions with performance tech</h4><p>Prioritized for your ${esc(gear.goals[profile.goal].label.toLowerCase())} goal. Only marked positions can receive these bonuses.</p></div></div>
-  <div class="priority-item"><span class="number-badge">⌗</span><div><h4>${stats.connections} verified adjacency links</h4><p>Only modeled compatible side-by-side technologies count, including confirmed cross-family hazard links, not diagonals.</p></div></div>
+  <div class="priority-item"><span class="number-badge">⌗</span><div><h4>${stats.connections} verified adjacency links · ${stats.fragmentedGroups} split groups</h4><p>Every compatible family receives baseline adjacency credit, even when not selected as the main goal. Only modeled compatible side-by-side technologies count, including confirmed cross-family hazard links, not diagonals.</p></div></div>
   ${sorted.slice(0,3).map((id,i)=>`<div class="priority-item"><span class="number-badge">${i+1}</span><div><h4>${esc(gear.families[id].name)}</h4><p>${esc(gear.families[id].next)}</p></div></div>`).join('')}
   <div class="notice">${profile.target==='X'?'<strong>X-class reminder:</strong> X-class rolls vary dramatically. A good S-class module can outperform a poor X-class roll.':'<strong>S-class reminder:</strong> S-class is a reliable target, but compare actual stats rather than assuming every roll is identical.'}</div>`;
 }
@@ -649,7 +737,7 @@ function renderFamilyCard(id,gear,profile,i){
   const fam=gear.families[id];const count=Math.min(profile.depth,fam.maxUpgrades||0);
   const addons=(fam.addons||[]).filter(a=>canUse(a,profile.vehicle)&&profile.addons.includes(id+':'+a.id));
   const replacement=Object.entries(gear.families).flatMap(([fId,owner])=>(owner.addons||[]).filter(a=>a.replacesCore===id&&profile.enabled.includes(fId)&&profile.addons.includes(fId+':'+a.id)));
-  return `<div class="family-card"><div class="family-head"><strong class="family-heading"><span class="family-icon ${esc(fam.color)}">${ICONS.render(fam.icon,'family-glyph')}</span><span>${esc(fam.name)}</span></strong><span class="tag">PRIORITY ${i+1}</span></div><div class="family-desc">${esc(fam.why)}</div><div class="family-components">${fam.core?`<b>Core:</b> ${esc(replacement.length?replacement[0].name+' (replaces '+fam.core+')':fam.core)}`:'<b>Selectable technology</b>'}${count?` · <b>${count} ×</b> ${esc(fam.upgrade)}`:''}${addons.length?`<div class="crafted-list"><b>Crafted:</b> ${addons.map(a=>esc(a.name)).join(' · ')}</div>`:''}</div></div>`;
+  return `<div class="family-card"><div class="family-head"><strong class="family-heading"><span class="family-icon ${esc(fam.color)}" ${techStyle(id)}>${ICONS.render(fam.icon,'family-glyph')}</span><span>${esc(fam.name)}</span></strong><span class="tag">PRIORITY ${i+1}</span></div><div class="family-desc">${esc(fam.why)}</div><div class="family-components">${fam.core?`<b>Core:</b> ${esc(replacement.length?replacement[0].name+' (replaces '+fam.core+')':fam.core)}`:'<b>Selectable technology</b>'}${count?` · <b>${count} ×</b> ${esc(fam.upgrade)}`:''}${addons.length?`<div class="crafted-list"><b>Crafted:</b> ${addons.map(a=>esc(a.name)).join(' · ')}</div>`:''}</div></div>`;
 }
 function toast(message,error=false){
   const old=document.querySelector('.toast');if(old)old.remove();if(toastTimer)clearTimeout(toastTimer);

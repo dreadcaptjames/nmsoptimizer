@@ -3,6 +3,12 @@
 **Game reference: FORSAKEN 7.10 (October 28, 2026), Corvette priority correction October 29 and missing-module audit October 30, 2026.** The performance-focused Corvette catalog includes official named cockpit variants, three newly identified generators, Dematerialisation Ray and Venom Spitter, new propulsion and landing hardware, and named Legion/Legionnaire/Gunner habitation parts. Decorative hull/interior pieces are no longer shown in the active catalog. An optional Forsaken design family and courier focus are available. The Multi-Tool workbench includes guidance for the new Larva Cannon chassis. The new warp mechanic and weapon wheel do not create new technology adjacency bonuses, so the existing optimizer adjacency rules remain unchanged. For provenance and open limitations, see `FORSAKEN-7.10-UPDATE.md`.
 
 
+## Adjacency and color clarity improvement (October 30, 2026)
+
+Supercharged placements **still respect the chosen goal first**. During the adjacency phase, every verified compatible pair now receives a baseline benefit even if that family is not the selected priority. The optimizer also discourages split technology groups and runs a final legal grouping pass without evicting the goal's selected supercharged modules. In cases where far-apart purple slots force a split, it preserves those marked positions.
+
+Technology icons, grid cells and inspector cards now use an expanded **family-specific color palette** (82 stable identities across the current equipment catalogs); tile codes such as `HYP · U1` remain visible so color is not the only distinguishing cue. The five interface themes and purple supercharged indicators remain separate. See `ADJACENCY-AND-TECH-COLOR-UPDATE.md`.
+
 **A No Man’s Sky equipment and technology optimization companion**
 
 ATLAS MAX is an unofficial, browser-based planning tool for players who want to make better use of their equipment technology slots. It helps you explore upgrade combinations, organize technology around adjacency bonuses, decide what belongs in supercharged slots, and compare possible layouts before recreating them in the game.

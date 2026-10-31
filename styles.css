@@ -68,3 +68,22 @@
 .forsaken-note a{display:inline-flex;align-items:center;color:#e1caff;border:1px solid #7859a3;border-radius:8px;text-decoration:none;padding:9px 12px;font-size:11px;font-weight:780;white-space:nowrap}
 .forsaken-note a:hover,.forsaken-note a:focus-visible{background:rgba(153,112,209,.2);text-decoration:underline}
 @media (max-width:660px){.forsaken-note{align-items:flex-start;gap:9px;padding:14px}.forsaken-note .forsaken-tag{flex:1 1 100%}.forsaken-note a{flex:0 1 auto}}
+
+/* v1.9 — distinct technology-family colors (independent of UI themes). */
+.family-icon[style*="--tech-tone"], .slot-icon[style*="--tech-tone"],
+.addon-glyph[style*="--tech-tone"]{color:var(--tech-tone)}
+.family-icon[style*="--tech-tone"]{
+  border-color:color-mix(in srgb,var(--tech-tone),transparent 20%);
+  background:color-mix(in srgb,var(--tech-tone),#101d2a 10%);
+}
+.cell.tile[style*="--tech-tone"]{
+  --tile-color:var(--tech-tone);
+  border-color:color-mix(in srgb,var(--tech-tone),#233a4a 48%);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--tech-tone),#152331 18%),#101d2a 76%);
+}
+.cell.tile[style*="--tech-tone"] .cell-rank{color:var(--tech-tone);letter-spacing:.03em}
+.cell.tile[style*="--tech-tone"] .cell-name{color:#eaf2f7}
+.cell.tile[style*="--tech-tone"]:before{height:3px;opacity:.95}
+/* Purple markings always identify player-specified supercharged slots. */
+.cell.sc.sc-effective{border-color:#d8aaff}
+.cv-color-explainer{color:#b9ccdd;font-size:10px}

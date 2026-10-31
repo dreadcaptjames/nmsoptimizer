@@ -128,7 +128,7 @@
   }
   function scoreMap(map, tiles, gear, goal, cols, rows, supercharged) {
     let score = 0, connections = 0, usedSC = 0, effectiveSC = 0;
-    let scScore = 0, adjacencyScore = 0, compactnessPenalty = 0;
+    let scScore = 0, adjacencyScore = 0, compactnessPenalty = 0, fragmentedGroups = 0;
     const sc = new Set(supercharged);
     const groups = {}, scPlacements=[];
     for (let p = 0; p < map.length; p++) {
@@ -155,7 +155,11 @@
           else {
             const otherWeight=Math.max(0,Number(goal.weights[other.family]??1));
             const coreBonus = other.role === 'core' || t.role === 'core' ? 1.12 : 1;
-            adjacencyScore += 3.5 * (t.family===other.family?w:Math.max(w,otherWeight)) * coreBonus;
+            // A compatible pair is valuable even when BOTH systems have zero
+            // goal weight. The goal weight is an *extra* bonus, not the only
+            // reason to connect second-tier technologies.
+            const priorityWeight=Math.max(w,otherWeight);
+            adjacencyScore += (5.5 + 1.25 * priorityWeight) * coreBonus;
           }
           connections++;
         }
@@ -170,11 +174,38 @@
       const meanY = positions.reduce((s,p)=>s+Math.floor(p/cols),0)/positions.length;
       let spread = 0;
       positions.forEach(p => { spread += Math.abs(p%cols-meanX)+Math.abs(Math.floor(p/cols)-meanY); });
-      compactnessPenalty += spread * .32 * Math.max(0,Number(goal.weights[id] ?? 1));
+      const weight=Math.max(0,Number(goal.weights[id] ?? 1));
+      // Always compact technology families: the old weight-only penalty was
+      // exactly zero for the secondary systems Long Range and Combat omit.
+      compactnessPenalty += spread * (.20 + .09 * weight);
+      // Reward one cohesive group instead of two disconnected mini-clusters.
+      // Only count tiles for which at least one same-family adjacency is
+      // modeled, so standalone and special-case technology is not penalized.
+      const eligible=positions.filter(pos=>positions.some(other=>other!==pos &&
+        areAdjacent(tiles[map[pos]],tiles[map[other]],gear)));
+      if(eligible.length<2)return;
+      const left=new Set(eligible);
+      let components=0;
+      while(left.size){
+        components++;
+        const first=left.values().next().value;
+        left.delete(first);
+        const queue=[first];
+        while(queue.length){
+          const here=queue.pop();
+          for(const neighbor of getNeighbors(here,cols,rows)){
+            if(left.has(neighbor)&&areAdjacent(tiles[map[here]],tiles[map[neighbor]],gear)){
+              left.delete(neighbor);queue.push(neighbor);
+            }
+          }
+        }
+      }
+      if(components>1){fragmentedGroups+=components-1;
+        compactnessPenalty+=(components-1)*(5 + 1.1*weight);}
     });
     score = scScore + adjacencyScore - compactnessPenalty;
     return {score,connections,usedSC,effectiveSC,scScore,adjacencyScore,
-      compactnessPenalty,scPlacements};
+      compactnessPenalty,fragmentedGroups,scPlacements};
   }
   function solve({gear,profile}) {
     const {cols,rows} = profile;
@@ -239,6 +270,41 @@
         } else [map[a],map[b]]=[map[b],map[a]];
       }
       if(!bestStats || top.score>bestStats.score){bestStats=top;bestMap=topMap;}
+    }
+    // Final cohesion pass: stochastic search can leave a secondary group split
+    // despite an obvious nearby legal move. Try swaps that bring compatible
+    // technologies together. Never evict the committed SC-priority selection.
+    if(bestMap){
+      const legalSwap=(a,b,map)=>{
+        if(a===b || (map[a]===-1 && map[b]===-1))return false;
+        if(scPositions.has(a)!==scPositions.has(b)){
+          const ai=map[a],bi=map[b];
+          if((ai>=0&&requiredSC.has(ai)) !== (bi>=0&&requiredSC.has(bi)))return false;
+        }
+        return true;
+      };
+      for(let pass=0;pass<26;pass++){
+        let gain=0,swapA=-1,swapB=-1,nextStats=null;
+        // Consider each technology tile moving beside a compatible member.
+        for(const a of available){
+          const tile=tiles[bestMap[a]];
+          if(!tile || tile.noAdjacency)continue;
+          for(const anchor of available){
+            if(a===anchor || !areAdjacent(tile,tiles[bestMap[anchor]],gear))continue;
+            for(const b of getNeighbors(anchor,cols,rows)){
+              if(!legalSwap(a,b,bestMap) || blocked.has(b))continue;
+              [bestMap[a],bestMap[b]]=[bestMap[b],bestMap[a]];
+              const trial=scoreMap(bestMap,tiles,gear,goal,cols,rows,sc);
+              [bestMap[a],bestMap[b]]=[bestMap[b],bestMap[a]];
+              const delta=trial.score-bestStats.score;
+              if(delta>gain+1e-7){gain=delta;swapA=a;swapB=b;nextStats=trial;}
+            }
+          }
+        }
+        if(swapA<0)break;
+        [bestMap[swapA],bestMap[swapB]]=[bestMap[swapB],bestMap[swapA]];
+        bestStats=nextStats;
+      }
     }
     return {tiles,map:bestMap,stats:bestStats,skipped:assembled.skipped,requested:assembled.requested};
   }
