@@ -87,3 +87,16 @@
 /* Purple markings always identify player-specified supercharged slots. */
 .cell.sc.sc-effective{border-color:#d8aaff}
 .cv-color-explainer{color:#b9ccdd;font-size:10px}
+
+/* Portable PDF reports and separate editable JSON backup. */
+.top-link.pdf-action{
+  border-color:var(--at-theme-accent,var(--accent));
+  color:var(--at-theme-label,#e9fcf8);
+  background:color-mix(in srgb,var(--at-theme-accent,var(--accent)),#111d2a 13%);
+}
+.top-link.pdf-action:hover{background:color-mix(in srgb,var(--at-theme-accent,var(--accent)),#142332 23%)}
+@media(max-width:590px){
+  .topbar{height:auto;min-height:69px;flex-wrap:wrap;padding:10px 0;row-gap:9px}
+  .top-actions{flex:1 1 100%;justify-content:flex-end;flex-wrap:wrap}
+  .top-actions .top-link{font-size:11px}
+}

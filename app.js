@@ -388,9 +388,9 @@ function adjacencyFor(i,gear,profile,tile){
 function chrome(key){return `
     <header class="topbar">
       <div class="brand"><span class="brand-icon" aria-hidden="true">⟁</span><div><div class="brand-name">ATLAS <span>MAX</span></div><div class="brand-sub">NO MAN'S SKY <b>·</b> EQUIPMENT LAB</div></div></div>
-      <div class="top-actions"><span class="version"><i class="dot"></i> ${esc(DATA.release)} REFERENCE</span><button class="top-link" data-action="import" title="Load saved equipment profiles">⇧ <span>Import</span></button><button class="top-link" data-action="export" title="Download your saved equipment profiles">⇩ <span>Export</span></button><input type="file" id="import-file" accept="application/json,.json" class="sr-only"></div>
+      <div class="top-actions"><span class="version"><i class="dot"></i> ${esc(DATA.release)} REFERENCE</span><button class="top-link" data-action="import" title="Import an editable JSON backup">⇧ <span>Import</span></button><button class="top-link" data-action="backup-json" title="Save editable profiles as JSON for later import">⇩ <span>Backup JSON</span></button><button class="top-link pdf-action" data-action="export" title="Download the current equipment build as a PDF report">⇩ <span>Export PDF</span></button><input type="file" id="import-file" accept="application/json,.json" class="sr-only"></div>
     </header>
-    <div class="command-heading"><div><span class="eyebrow"><span class="signal-dot"></span> // TRAVELLER LOADOUT COMMAND</span><h1>Build for <em>what's out there.</em></h1><p>Every slot matters. Design the loadout, find your synergies, and bring the plan into your game.</p></div><div class="command-aside"><span>OPERATIONS / 06 SYSTEMS</span><strong>TECHNOLOGY WORKBENCH</strong><small>Offline-ready · Fresh session · Export to keep</small></div></div>
+    <div class="command-heading"><div><span class="eyebrow"><span class="signal-dot"></span> // TRAVELLER LOADOUT COMMAND</span><h1>Build for <em>what's out there.</em></h1><p>Every slot matters. Design the loadout, find your synergies, and bring the plan into your game.</p></div><div class="command-aside"><span>OPERATIONS / 06 SYSTEMS</span><strong>TECHNOLOGY WORKBENCH</strong><small>Offline-ready · PDF reports + JSON backups</small></div></div>
     <nav class="gear-nav" aria-label="Equipment types">${gearKeys.map((k,i)=>`<button class="gear-btn ${k===key?'active':''}" data-action="gear" data-gear="${k}" aria-pressed="${k===key}"><span class="gear-icon">${ICONS.render(DATA.gear[k].icon,'gear-glyph')}</span><span class="gear-text"><b>${esc(DATA.gear[k].name)}</b><small>0${i+1} / EQUIPMENT</small></span><span class="gear-arrow">↗</span></button>`).join('')}</nav>
 `; }
 
@@ -460,7 +460,7 @@ function render(){
         <div class="config-body" id="config-body">
           <div class="config-block"><div class="form-row"><label class="label" for="gear-name">Loadout name</label><input id="gear-name" class="control" maxlength="80" placeholder="${esc(gear.placeholder)}" value="${esc(profile.name)}"></div>
             <div class="controls-2"><div class="form-row"><label class="label" for="gear-class">Equipment class</label><select id="gear-class" class="control" ${gear.fixedSC?'disabled title="Supercharged slots do not scale with class for this equipment"':''}>${selectorOptions(['C','B','A','S'],profile.cls,v=>v+' class')}</select></div><div class="form-row"><label class="label" for="gear-target">Upgrade target</label><select id="gear-target" class="control">${selectorOptions(['S','X'],profile.target,v=>v+' class')}</select></div></div>
-            ${gear.vehicleOptions?`<div class="form-row"><label class="label" for="vehicle">Exocraft model</label><select id="vehicle" class="control">${Object.entries(gear.vehicleOptions).map(([id,name])=>`<option value="${id}" ${profile.vehicle===id?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="tiny">Each vehicle keeps its layout until the page is reloaded. Export to keep it.</p></div>`:''}
+            ${gear.vehicleOptions?`<div class="form-row"><label class="label" for="vehicle">Exocraft model</label><select id="vehicle" class="control">${Object.entries(gear.vehicleOptions).map(([id,name])=>`<option value="${id}" ${profile.vehicle===id?'selected':''}>${esc(name)}</option>`).join('')}</select><p class="tiny">Each vehicle keeps its layout until reload. Use Backup JSON to keep editable settings.</p></div>`:''}
             <div class="form-row"><label class="label" for="goal">Optimization focus</label><select id="goal" class="control">${Object.entries(gear.goals).map(([id,g])=>`<option value="${id}" ${id===profile.goal?'selected':''}>${esc(g.label)}</option>`).join('')}</select></div>
             <div class="form-row"><label class="label">Rolled modules / family</label><div class="segmented" role="group" aria-label="Module cap">${[1,2,3].map(i=>`<button data-action="depth" data-depth="${i}" class="${i===profile.depth?'current':''}" aria-pressed="${i===profile.depth}">${i}</button>`).join('')}</div><p class="tiny">Crafted blueprints do not use these slots.</p></div>
           </div>
@@ -503,7 +503,7 @@ function render(){
         </div>
       </aside>
     </div>
-    <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
+    <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export PDF for reference · Backup JSON to resume editing</span></footer>`;
   if(technologyQuery)applySearch();
   restoreWorkbenchView(view);
 }
@@ -577,7 +577,7 @@ function renderCorvette(){
        <div class="cv-catalog-summary" id="cv-catalog-summary" role="status" aria-live="polite"></div>${visualLegacy.length?`<div class="notice warning cv-legacy-note"><strong>${visualLegacy.length} cosmetic part type(s) retained from your imported plan.</strong> They no longer appear in the stat catalog. <button type="button" class="btn quiet" data-action="cv-cleanup-visual">Remove cosmetic items from plan</button></div>`:''}<div class="cv-catalog" id="cv-catalog">${partsHtml}</div><p class="cv-catalog-empty" id="cv-catalog-empty" hidden>No functional parts match. Select All functional parts or clear the search.</p></div>
    </aside>
    <main class="cv-main">
-    <section class="panel cv-planner"><div class="planner-head"><div><span class="eyebrow">02 / WORKSHOP CONFIGURATION</span><h2>Build your Corvette</h2><p class="helper">Create a suggested starter manifest or assemble your own. Export to keep your work after this visit.</p></div></div>
+    <section class="panel cv-planner"><div class="planner-head"><div><span class="eyebrow">02 / WORKSHOP CONFIGURATION</span><h2>Build your Corvette</h2><p class="helper">Create a suggested starter manifest or assemble your own. Export a PDF report or save an editable JSON backup.</p></div></div>
      <div class="cv-settings">
        <label>Ship name<input id="cv-name" class="control" maxlength="80" placeholder="My Corvette" value="${esc(p.name)}"></label>
        <label>Build focus<select id="cv-goal" class="control">${Object.entries(CV.goals).map(([id,g])=>`<option value="${id}" ${p.goal===id?'selected':''}>${esc(g.label)}</option>`).join('')}</select></label>
@@ -607,7 +607,7 @@ function renderCorvette(){
     </div>
    </aside>
   </div>
-  <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export builds to keep · Unofficial fan project</span></footer>`;
+  <footer class="footer"><span>⟁ ATLAS MAX / UNOFFICIAL NO MAN'S SKY COMPANION</span><span>Fresh start on reload · Export PDF for reference · Backup JSON to resume editing</span></footer>`;
  applyCorvetteSearch();
 }
 let corvetteQuery='';
@@ -683,7 +683,7 @@ function handleCorvetteClick(action,d){const p=state.equipment.corvette;
   copyPlainText(txt,'Corvette manifest copied.');return;
  }
 }
-async function copyPlainText(txt,done){try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(txt);else{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();if(!document.execCommand('copy'))throw Error('Unsupported clipboard');t.remove();}toast(done);}catch(e){toast('Clipboard unavailable; use Export to save all profiles.',true);}}
+async function copyPlainText(txt,done){try{if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(txt);else{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();if(!document.execCommand('copy'))throw Error('Unsupported clipboard');t.remove();}toast(done);}catch(e){toast('Clipboard unavailable; use Export PDF or Backup JSON.',true);}}
 
 function renderCell(i,gear,profile,cellAction='cell'){
   const locked=profile.blocked.includes(i),sc=profile.sc.includes(i);
@@ -802,11 +802,28 @@ SC assignments: ${stats.scPlacements.map(x=>`R${Math.floor(x.position/profile.co
 async function copySummary(){const summary=buildSummary();if(!summary)return;
   try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(summary);}else{
     const t=document.createElement('textarea');t.value=summary;document.body.appendChild(t);t.select();if(!document.execCommand('copy'))throw new Error('Unsupported clipboard');t.remove();
-  }toast('Build summary copied.');}catch(e){toast('Clipboard unavailable. Use Export to save your build.',true);}
+  }toast('Build summary copied.');}catch(e){toast('Clipboard unavailable. Use Export PDF to save the plan.',true);}
+}
+function downloadPDF(){
+  try{
+    if(!window.ATLAS_PDF_EXPORT)throw Error('PDF exporter was not loaded.');
+    const {key,gear,profile}=context();
+    const tech=key==='corvette'?profile.tech:profile;
+    const techGear=key==='corvette'?corvetteGearForProfile(profile):gear;
+    const stats=tech.layout?SOLVER.summarize(tech.layout,techGear,tech):null;
+    const accent=getComputedStyle(document.documentElement).getPropertyValue('--at-theme-accent').trim()||'#ff5871';
+    const result=window.ATLAS_PDF_EXPORT.makeReport({key,gear,profile,techGear,stats,
+      parts:CV.parts,release:DATA.release,tones:familyTones,accent});
+    const blob=new Blob([result.bytes],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=result.filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),10000);
+    toast(`${gear.name} PDF exported (${result.pages} pages). Use Backup JSON to save editable builds.`);
+  }catch(e){toast('PDF export failed: '+(e.message||'unknown error'),true);console.error('ATLAS MAX PDF export:',e);}
 }
 function downloadJSON(){
   const blob=new Blob([JSON.stringify({...state,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='atlas-max-loadouts.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('Saved profiles exported as JSON.');
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='atlas-max-loadouts.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('Editable profiles backed up as JSON.');
 }
 async function importJSON(file){if(!file)return;try{
   if(file.size>600000)throw new Error('File is too large.');
@@ -827,7 +844,8 @@ app.addEventListener('click',event=>{
   if(action==='clear-sc'){profile.sc=[];profile.scExample=false;layoutChanged(profile);toast('Supercharged markers cleared. Mark your actual slot locations.');return;}
   if(action==='clear-layout'){profile.layout=null;profile.dirty=false;selectedCell=null;activeTile=null;save();render();return;}
   if(action==='copy'){copySummary();return;}
-  if(action==='export'){downloadJSON();return;}
+  if(action==='export'){downloadPDF();return;}
+  if(action==='backup-json'){downloadJSON();return;}
   if(action==='import'){document.getElementById('import-file').click();return;}
   if(action==='reset'){if(window.confirm(`Reset ${gear.name} profile and all its layout settings?`)){state.equipment[key]=defaultProfile(key);selectedCell=null;activeTile=null;editing='move';save();render();toast('Equipment profile reset.');}}
 });

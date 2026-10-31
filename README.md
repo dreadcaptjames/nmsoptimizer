@@ -74,7 +74,7 @@ Each linked construction tile records the physical part that created it and the 
 ### Keep and revisit your builds
 
 - Work with independent equipment layouts and individual Exocraft models during the current visit. Every new page load starts from the default presets.
-- **Export your work as JSON before leaving**, and manually import an exported file when you want to resume a previous build.
+- **Export PDF** downloads a readable report of the active equipment build (technology grid, supercharged positions, full module index and, for Corvettes, the construction manifest). **Backup JSON** separately saves all six profiles in an editable format; use **Import** to restore it.
 - Use the responsive workbench on desktop and smaller screens.
 - Browse without an account or a connection to the game; the interface and its icons are self-contained.
 
@@ -97,7 +97,7 @@ In particular:
 
 ## Player control and data
 
-**ATLAS MAX always starts fresh.** Opening or refreshing the page restores the default settings for all six equipment categories, with **no supercharged slots preselected**; it does not automatically reload a previous build. Mark the purple-slot positions you actually have before optimizing. While the page is open, switching equipment categories retains your changes within that visit. To keep a build between visits, use **Export** to download a JSON file and **Import** to load that file manually later. If you close or refresh the page before exporting, you should expect to start over. Nothing is uploaded to an ATLAS MAX account or game service.
+**ATLAS MAX always starts fresh.** Opening or refreshing the page restores the default settings for all six equipment categories, with **no supercharged slots preselected**; it does not automatically reload a previous build. Mark the purple-slot positions you actually have before optimizing. While the page is open, switching equipment categories retains your changes within that visit. To keep an editable build between visits, use **Backup JSON** to save all equipment profiles, then **Import** to restore that file later. **Export PDF** downloads the currently selected equipment as a view-only reference and is not an importable save. If you close or refresh the page before making a JSON backup, you should expect to start over. Nothing is uploaded to an ATLAS MAX account or game service.
 
 The app's illustrated icons are original, game-inspired interface artwork, not official No Man’s Sky inventory icons.
 
@@ -106,3 +106,10 @@ The app's illustrated icons are original, game-inspired interface artwork, not o
 ATLAS MAX is an **unofficial fan-made companion** and is not affiliated with, sponsored by, or endorsed by Hello Games. No Man’s Sky names are used to identify the in-game systems being discussed.
 
 For official game changes and patch information, see the [No Man’s Sky release log](https://www.nomanssky.com/release-log/).
+
+
+## PDF reports (October 30, 2026)
+
+The **Export PDF** action now downloads a real, multi-page PDF for the **currently selected equipment category**. The report is generated entirely in the browser with a local, dependency-free PDF generator (`pdf-export.js`) and includes a color-coded technology matrix with numbered slots and purple SC markers, an index of installed technologies with row/column coordinates, class/focus metadata, and planning metrics. Corvette reports also include a grouped manifest with module quantities and assigned zones. Reports show a warning if the current layout needs re-optimization, or note if no layout has been generated yet.
+
+PDFs are designed for printing, sharing, and referring to while arranging technology in-game. **PDFs are not editable backups.** The separate **Backup JSON** button retains the existing all-equipment JSON format so users can continue to use the **Import** button. No account, backend, CDN, third-party script, or network connection is required to generate reports. See `PDF-EXPORT.md` for testing and known limitations.
